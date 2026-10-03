@@ -15,3 +15,8 @@
 /Release/
 /NV1Quake/id1/
 /currenttask.md
+.superpowers/
+
+# installer build output
+/NV1Quake/installers/stage/
+/NV1Quake/installers/output/
