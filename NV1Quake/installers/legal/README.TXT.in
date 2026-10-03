@@ -1,0 +1,16 @@
+nv1Quake @@VERSION@@ - @@VARIANT@@ build
+
+@@WHATITIS@@
+
+BEFORE YOU RUN IT
+Copy PAK0.PAK (and PAK1.PAK for the registered game) from your own copy of
+Quake into the id1 folder. nv1Quake does not include game data.
+
+NOTES
+@@NOTES@@
+
+nv1Quake is a community experiment by passionate fans of id Software and
+NVIDIA. See NOTICE.TXT for licence, source code and credits, and COPYING.TXT
+for the GNU General Public License.
+
+Installer created by Abigail / Abnormality Software (2026)

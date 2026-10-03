@@ -1,0 +1,2 @@
+Put PAK0.PAK (and PAK1.PAK for the registered game) from your own copy of
+Quake in this folder. They are not included with nv1Quake.
