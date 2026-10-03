@@ -109,6 +109,11 @@ From id's own documents in this repo (`readme.txt`, `WinQuake\data\LICINFO.TXT`,
    use of id's names/logos/graphics for the shareware or registered games).
    Installers are free, and contain no id logos or Quake art. `NOTICE.TXT`
    says the port is unofficial and not endorsed by id Software or NVIDIA.
+   **Community statement** (user's wording, used verbatim in spirit on the
+   product page, in `NOTICE.TXT` and in `README.TXT`): nv1Quake is a community
+   experiment created by passionate fans of id Software and NVIDIA, made out of
+   love and curiosity. If either company asks for these applications to be
+   removed, they will be taken down immediately.
 4. **Credit line** on every installer: "Installer created by Abigail /
    Abnormality Software (2026)", as on the other retro installers.
 5. **NVIDIA.** `NVVIDMOD.DLL` ships with the Win95 build: NVIDIA's SDK overview
@@ -151,6 +156,8 @@ Passes the credit line via `AppCopyright`.
 Follows the existing site pattern (R2 bucket `abnormalitysoftware-downloads`,
 `/dl/` counted downloads, `versions.json`), with one product page for NV1 Quake
 offering three downloads (Windows 10/11, Windows 95, DOS) plus the source zip.
+The page carries the community statement above, prominently (not buried in a
+footer), alongside the unofficial/not-endorsed line.
 
 - Uploads to `NV1Quake/<file>` via `wrangler r2 object put ... --remote`.
 - Adds an `nv1quake` entry to `versions.json` (`version` + `url`, pointing at
