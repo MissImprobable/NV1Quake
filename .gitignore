@@ -1,0 +1,10 @@
+# nv1Quake build output (NV1Quake/)
+/NV1Quake/*.err
+/NV1Quake/*.exe
+/NV1Quake/*.map
+/NV1Quake/*.lnk
+/NV1Quake/obj/
+/NV1Quake/objdos/
+/NV1Quake/objnv1/
+/NV1Quake/stdout.txt
+/NV1Quake/stderr.txt
