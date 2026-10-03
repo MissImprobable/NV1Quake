@@ -3,9 +3,9 @@ Installer created by Abigail / Abnormality Software (2026)
 
 WHAT THIS IS
 nv1Quake is a community experiment created by passionate fans of id Software
-and NVIDIA. It ports GLQuake to the NVIDIA NV1 / Diamond Edge 3D accelerator,
-and was made out of love and curiosity. If either company asks for these
-applications to be removed, we will comply immediately.
+and NVIDIA. It ports GLQuake to the NVIDIA NV1 / Diamond Edge 3D
+accelerator, and was made out of love and curiosity. If either company asks
+for these applications to be removed, we will comply immediately.
 
 It is an unofficial project. It is not made, endorsed or supported by id
 Software or NVIDIA. "Quake" is a trademark of id Software. No id Software
@@ -21,19 +21,20 @@ scripts) was added on top.
 The complete corresponding source code is available free of charge:
   Repository: @@SOURCE_URL@@
   Commit:     @@COMMIT@@
-  A source archive of exactly this commit is published next to this installer
-  (NV1Quake-@@VERSION@@-source.zip). If you cannot get it from there, ask
-  and we will provide it.
+  A source archive of exactly this commit is published next to this
+  installer (NV1Quake-@@VERSION@@-source.zip). If you cannot get it from
+  there, ask and we will provide it.
 
 GAME DATA
 Quake's game data is NOT included. It remains copyrighted by id Software and
-cannot be redistributed. Copy PAK0.PAK (and PAK1.PAK for the registered game)
-from your own copy of Quake into the id1 folder inside the install directory.
-This program may only be used with Quake data under the terms of id Software's
-own shareware or registered licence. It must not be used commercially.
+cannot be redistributed. Copy PAK0.PAK (and PAK1.PAK for the registered
+game) from your own copy of Quake into the id1 folder inside the install
+directory. This program may only be used with Quake data under the terms
+of id Software's own shareware or registered licence. It must not be used
+commercially.
 
 THIRD-PARTY COMPONENTS AND OPEN QUESTIONS
 @@THIRDPARTY@@
 
-No warranty. This software is provided as is, as described in the GNU General
-Public License.
+No warranty. This software is provided as is, as described in the GNU
+General Public License.

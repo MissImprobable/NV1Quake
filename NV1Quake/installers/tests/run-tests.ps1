@@ -68,5 +68,23 @@ Pop-Location
 Assert-Equal (Test-Path "$rel\work\stage-here\NOTICE.TXT") $true 'relative -Dir writes where PowerShell is'
 Remove-Item $rel -Recurse -Force
 
+# --- ConvertTo-NoticeHeader
+$n = Join-Path $env:TEMP 'nv1-notice.txt'
+Set-Content $n ('say "hi" \ ' + ('word ' * 40)) -Encoding ASCII
+$h = Join-Path $env:TEMP 'nv1-notice.h'
+ConvertTo-NoticeHeader -NoticePath $n -OutPath $h
+$hc = Get-Content $h -Raw
+Assert-Equal ($hc -match 'NOTICE_LINE_COUNT') $true 'header defines NOTICE_LINE_COUNT'
+Assert-Equal ($hc -match '\\"hi\\"') $true 'quotes are escaped'
+Assert-Equal ($hc -match '\\\\ ') $true 'backslashes are escaped'
+Assert-Equal (@(Get-Content $h | Where-Object { $_.Length -gt 90 }).Count) 0 'lines are wrapped'
+$counted = [int](([regex]::Match($hc, 'NOTICE_LINE_COUNT (\d+)')).Groups[1].Value)
+$entries = @(Get-Content $h | Where-Object { $_ -match '^\s+".*",$' }).Count
+Assert-Equal $entries $counted 'NOTICE_LINE_COUNT matches the number of strings'
+$empty = Join-Path $env:TEMP 'nv1-notice-blank.txt'
+Set-Content $empty "line one`r`n`r`nline three" -Encoding ASCII
+ConvertTo-NoticeHeader -NoticePath $empty -OutPath $h
+Assert-Equal (@(Get-Content $h | Where-Object { $_ -match '^\s+"",$' }).Count) 1 'blank lines are kept'
+
 if ($script:Failures -gt 0) { Write-Host "$script:Failures failure(s)" -ForegroundColor Red; exit 1 }
 Write-Host 'All tests passed' -ForegroundColor Green
