@@ -1,0 +1,7 @@
+Vendored 2026-10-03 from X:\repos\FraggedLANManager at 55ca8a0458fb9e88aca1789ea1e0c8b36555db0a
+(our own Abnormality Software code: retro-installers/engine, retro-installers/packer, retro-client/nocrt.*, crt_entry.c).
+
+Local changes:
+- IDR_NOTICE and show_notice(): a licence/notice screen before anything is written.
+- extract_archive() call fixed to the 4-argument form its header declares.
+- include paths to nocrt.h (installer_main.c, engine.c).

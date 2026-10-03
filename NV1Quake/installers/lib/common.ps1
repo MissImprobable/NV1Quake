@@ -4,6 +4,8 @@ $script:InstallersRoot = Split-Path $PSScriptRoot -Parent
 $InstallersRoot = $script:InstallersRoot
 $RepoRoot = Split-Path (Split-Path $InstallersRoot -Parent) -Parent
 
+foreach ($f in 'build-retro.ps1') { . (Join-Path $PSScriptRoot $f) }   # installer builders
+
 function Get-NV1Version {
     (Get-Content (Join-Path $script:InstallersRoot 'VERSION') -Raw).Trim()
 }
