@@ -50,6 +50,16 @@ anything, and credit id Software, NVIDIA and the community (see `installers\READ
   redistribution grant could be confirmed.
 - Not tested on real hardware: neither the Win95 nor the DOS installer has run on real Windows 95 or
   real DOS (Win95 is checked for PE 4.0 and Win95-era imports; DOS runs under DOSBox).
+- **After an independent review** the following were fixed: the Win95 uninstaller deleted the whole
+  install folder (including the user's `id1` PAKs, saves and config, or other programs if a shared
+  folder was chosen) - it now removes only the files in its own manifest, plus its shortcuts, and has a
+  `/uninstall /silent` mode; the Inno uninstaller deleted `id1\` (saves, config.cfg) - it now removes only
+  the PAKs the installer copied; `publish-to-site.ps1` could commit unrelated staged site work
+  (`git commit` -> `commit --only`) and could never push a republish; publishing now verifies, from a
+  `BUILD-INFO.json` written by each build, that every installer and the source zip came from HEAD, a
+  clean tree and a fresh rebuild, and that HEAD is on origin (the notice promises the exact-commit
+  source archive); it now also adds the page to the home page and sitemap, uses Abigail's own poster
+  (`assets/NV1Quake.jpg` in the site repo) and requires PowerShell 7.
 
 ---
 

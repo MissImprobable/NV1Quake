@@ -1,0 +1,9 @@
+Vendored 2026-10-03 from X:\repos\FraggedLANManager at 55ca8a0458fb9e88aca1789ea1e0c8b36555db0a
+(our own Abnormality Software code: dos-installers/engine, dos-installers/packer).
+
+Local changes:
+- GameProfile gained `title` and `showGameOptions`; the banner is no longer hard-wired to Fragged,
+  and the Duke-specific player name / resolution / invert mouse fields can be hidden.
+- show_notice(): a scrollable licence/notice screen before anything is written (Esc cancels).
+- an unattended (/INSTALLDIR=) install no longer waits for a keypress at the end.
+- notice_text.h is generated from NOTICE.TXT at build time (see lib/build-dos.ps1).

@@ -57,7 +57,11 @@ Name: "{autodesktop}\nv1Quake"; Filename: "{app}\{#AppExeName}"; Parameters: "-w
 Filename: "{app}\{#AppExeName}"; Parameters: "-window"; WorkingDir: "{app}"; Description: "Launch nv1Quake"; Flags: nowait postinstall skipifsilent unchecked
 
 [UninstallDelete]
-Type: filesandordirs; Name: "{app}\id1"
+; Only the PAK files the installer itself copied in. The user's saves and config.cfg also live in id1\,
+; so the folder is removed only if it ends up empty.
+Type: files; Name: "{app}\id1\PAK0.PAK"
+Type: files; Name: "{app}\id1\PAK1.PAK"
+Type: dirifempty; Name: "{app}\id1"
 Type: dirifempty; Name: "{app}"
 
 [Code]

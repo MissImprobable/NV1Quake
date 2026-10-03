@@ -54,18 +54,26 @@ the DOS notice header, the source zip, the publish plan and the `versions.json` 
     site\    product page template
     lib\     PowerShell library (common, stage, build-retro, build-dos, publish)
 
-To change the legal wording, edit `legal\*.in`. To replace the placeholder art, replace the files in
-`art\` keeping their names (`nv1quake-poster.png` is the product page poster).
+To change the legal wording, edit `legal\*.in`. The installer icons and wizard art are in `art\`
+(replace them keeping their names). The product page poster is Abigail's own art, `assets/NV1Quake.jpg`
+in the website repo; it is not copied into this repo.
 
 ## Publishing
 
-    .\publish-to-site.ps1             # dry run: prints what would be uploaded and changed
-    .\publish-to-site.ps1 -Publish    # uploads to R2, writes the page, adds versions.json, pushes
+    .\publish-to-site.ps1             # dry run: prints what would happen, and whether it is READY
+    .\publish-to-site.ps1 -Publish    # uploads to R2, writes the page, links it, adds versions.json, pushes
 
-It uploads to `abnormalitysoftware-downloads/NV1Quake/`, writes `apps\nv1quake.html` and the poster
-asset, adds an `nv1quake` entry to `versions.json` (text edit, so nothing else in that file changes),
-and commits and pushes **only those files** in the site repo. It refuses to run if those files
-already have uncommitted changes.
+Requires PowerShell 7. `-Publish` refuses to run unless the build and the source offer correspond:
+every installer and the source zip must have been built (by `build-installers.ps1 -Rebuild`, recorded in
+`output\BUILD-INFO.json`) from HEAD, from a clean tree, and HEAD must be on `origin` - because each
+installer's notice promises "a source archive of exactly this commit", and the GPL requires the source
+to be available. So: commit, **push**, `build-installers.ps1 -Rebuild`, then publish.
+
+It uploads to `abnormalitysoftware-downloads/NV1Quake/`, writes `apps\nv1quake.html`, adds an nv1Quake
+card to the home page and an entry to `sitemap.xml`, and adds the `nv1quake` entry to `versions.json`
+(all text edits, so nothing else in those files changes). It commits only those files plus the poster
+(`git commit --only`, so anything else staged in the site repo is not swept in) and pushes. It refuses
+to run if the files it rewrites already have uncommitted changes. A second publish is harmless.
 
 ## Licensing notes
 

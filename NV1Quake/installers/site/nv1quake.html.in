@@ -67,11 +67,8 @@
     <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mt-6 mb-8">
 
         <div>
-            <!-- PLACEHOLDER ART: the Fragged logo until real nv1Quake art exists.
-                 Replace installers/art/nv1quake-poster.png (same file name) and re-publish. -->
-            <img src="../assets/nv1quake-poster.png"
+            <img src="../assets/NV1Quake.jpg"
                  class="rounded-xl shadow-lg w-full"
-                 style="max-width: 360px; margin: 0 auto; background: #fff;"
                  alt="nv1Quake">
         </div>
 

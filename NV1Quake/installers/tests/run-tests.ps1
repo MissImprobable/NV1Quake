@@ -169,16 +169,102 @@ Assert-Equal ($plan.PageHtml -match 'we will comply immediately') $true 'page ha
 Assert-Equal ($plan.PageHtml -match 'twitch\.tv/carcenomy') $true 'page credits Carcenomy'
 Assert-Equal ($plan.PageHtml -match 'never been run on a real NV1') $true 'page states the hardware builds are untested'
 Assert-Equal $plan.Assets.Count 1 'plan has one site asset (the poster)'
-Assert-Equal $plan.Assets[0].Dest 'X:\fake-site\assets\nv1quake-poster.png' 'poster goes into the site assets folder'
-Assert-Equal (Test-Path $plan.Assets[0].Source) $true 'poster source art exists in art\'
-Assert-Equal ($plan.PageHtml -match 'assets/nv1quake-poster\.png') $true 'page uses the nv1quake poster'
-Assert-Equal ($plan.PageHtml -match 'fragged-poster') $false 'page no longer uses the Fragged LAN Manager poster'
+Assert-Equal $plan.Assets[0].Path 'X:\fake-site\assets\NV1Quake.jpg' 'poster is the art already in the site assets folder'
+Assert-Equal $plan.Assets[0].GitPath 'assets/NV1Quake.jpg' 'poster git path'
+Assert-Equal ($plan.PageHtml -match 'assets/NV1Quake\.jpg') $true 'page uses the NV1Quake poster'
+Assert-Equal ($plan.PageHtml -match 'fragged-poster') $false 'page does not use the Fragged LAN Manager poster'
+Assert-Equal $plan.SitemapPath 'X:\fake-site\sitemap.xml' 'plan knows the sitemap'
+Assert-Equal $plan.IndexPath 'X:\fake-site\index.html' 'plan knows the home page'
 Remove-Item "$po\NV1Quake-0.10-DOS-Setup.exe"
 Assert-Throws { Get-PublishPlan -OutputDir $po -SiteRepo 'X:\fake-site' -Version '0.10' } 'DOS-Setup' 'a missing installer aborts the plan'
 Set-Content "$po\NV1Quake-0.10-DOS-Setup.exe" 'x'
 Set-Content "$po\PAK0.PAK" 'x'
 Assert-Throws { Get-PublishPlan -OutputDir $po -SiteRepo 'X:\fake-site' -Version '0.10' } 'PAK' 'game data in output aborts the plan'
 Remove-Item $po -Recurse -Force
+
+# --- Add-SitemapEntry / Add-HomeCard: make the page reachable (text inserts, idempotent, fail loudly)
+$sm = Join-Path $env:TEMP 'nv1-sitemap.xml'
+[IO.File]::WriteAllText($sm, "<urlset>`r`n  <url><loc>https://abnormalitysoftware.com/apps/bindery</loc></url>`r`n  <url><loc>https://abnormalitysoftware.com/apps/diskpixie</loc></url>`r`n  <url><loc>https://abnormalitysoftware.com/apps/fragged</loc></url>`r`n</urlset>`r`n")
+$orig = [IO.File]::ReadAllText($sm)
+Add-SitemapEntry -Path $sm
+Add-SitemapEntry -Path $sm
+$t = [IO.File]::ReadAllText($sm)
+Assert-Equal ([regex]::Matches($t, 'apps/nv1quake').Count) 1 'sitemap entry added exactly once (idempotent)'
+Assert-Equal ($t.Replace("  <url><loc>https://abnormalitysoftware.com/apps/nv1quake</loc></url>`r`n", '') -ceq $orig) $true 'sitemap otherwise byte-identical'
+Assert-Equal ($t -match "diskpixie</loc></url>`r`n  <url><loc>https://abnormalitysoftware.com/apps/nv1quake") $true 'entry sits after DiskPixie, CRLF kept'
+[IO.File]::WriteAllText($sm, '<urlset></urlset>')
+Assert-Throws { Add-SitemapEntry -Path $sm } 'diskpixie' 'sitemap without the anchor entry fails loudly'
+Remove-Item $sm
+
+$ix = Join-Path $env:TEMP 'nv1-index.html'
+[IO.File]::WriteAllText($ix, "<div>`r`n        <!-- DiskPixie -->`r`n        <div>dp</div>`r`n`r`n        <!-- Fragged LAN Manager -->`r`n        <div>fr</div>`r`n</div>`r`n")
+$orig = [IO.File]::ReadAllText($ix)
+Add-HomeCard -Path $ix -PosterFile 'NV1Quake.jpg'
+Add-HomeCard -Path $ix -PosterFile 'NV1Quake.jpg'
+$t = [IO.File]::ReadAllText($ix)
+Assert-Equal ([regex]::Matches($t, 'href="apps/nv1quake"').Count) 2 'home card links the product page (poster + button), once'
+Assert-Equal ($t -match 'assets/NV1Quake\.jpg') $true 'home card uses the poster'
+Assert-Equal ($t.IndexOf('<!-- nv1Quake -->') -lt $t.IndexOf('<!-- Fragged LAN Manager -->')) $true 'card is inserted before the Fragged card'
+Assert-Equal ($t.Contains($orig.Substring(0, $orig.IndexOf('        <!-- Fragged')))) $true 'text before the insertion point is untouched'
+[IO.File]::WriteAllText($ix, '<div>no markers here</div>')
+Assert-Throws { Add-HomeCard -Path $ix -PosterFile 'NV1Quake.jpg' } 'Fragged' 'home page without the anchor fails loudly'
+Remove-Item $ix
+
+# --- entry scripts require PowerShell 7 (5.1 reads the UTF-8 page template as ANSI and would publish garbled text)
+foreach ($s in 'build-installers.ps1', 'publish-to-site.ps1') {
+    $first = (Get-Content (Join-Path $InstallersRoot $s) -TotalCount 1)
+    Assert-Equal ($first -match '^#Requires -Version 7') $true "$s requires PowerShell 7"
+}
+
+# --- Publish-SiteFiles: commits ONLY the named paths, even if the user has other things staged
+$gr = Join-Path $env:TEMP 'nv1-gitsite'
+if (Test-Path -LiteralPath $gr) { Remove-Item -LiteralPath $gr -Recurse -Force }
+New-Item -ItemType Directory "$gr\apps", "$gr\assets" | Out-Null
+git -C $gr init -q 2>$null
+git -C $gr config user.email 'test@example.com'; git -C $gr config user.name 'Test'
+Set-Content "$gr\versions.json" '{ "a": 1 }'
+Set-Content "$gr\unrelated.txt" 'original'
+git -C $gr add -A 2>$null; git -C $gr commit -q -m initial 2>$null
+# the user has unrelated work staged
+Set-Content "$gr\unrelated.txt" 'half-done edit'
+Set-Content "$gr\half-done-page.html" '<p>wip</p>'
+git -C $gr add unrelated.txt half-done-page.html 2>$null
+# our publish touches its own files
+Set-Content "$gr\apps\nv1quake.html" '<p>page</p>'
+Set-Content "$gr\versions.json" '{ "a": 1, "nv1quake": 2 }'
+Set-Content "$gr\assets\nv1quake-poster.png" 'png'
+$did = Publish-SiteFiles -SiteRepo $gr -Paths 'apps/nv1quake.html', 'versions.json', 'assets/nv1quake-poster.png' -Message 'Add nv1Quake'
+Assert-Equal $did $true 'Publish-SiteFiles reports it committed'
+$inCommit = @(git -C $gr show --name-only --format= HEAD) | Sort-Object
+Assert-Equal ($inCommit -join ',') 'apps/nv1quake.html,assets/nv1quake-poster.png,versions.json' 'the commit contains exactly our three files'
+$stillStaged = @(git -C $gr diff --cached --name-only) | Sort-Object
+Assert-Equal ($stillStaged -join ',') 'half-done-page.html,unrelated.txt' "the user's unrelated staged work is left staged, not committed"
+$did2 = Publish-SiteFiles -SiteRepo $gr -Paths 'apps/nv1quake.html', 'versions.json', 'assets/nv1quake-poster.png' -Message 'Add nv1Quake'
+Assert-Equal $did2 $false 'republishing identical files is a no-op, not an error'
+Remove-Item -LiteralPath $gr -Recurse -Force
+
+# --- BUILD-INFO.json + Test-PublishReady: published installers must correspond to the published source
+$bo = Join-Path $env:TEMP 'nv1-buildinfo'
+if (Test-Path -LiteralPath $bo) { Remove-Item -LiteralPath $bo -Recurse -Force }
+New-Item -ItemType Directory $bo | Out-Null
+$H = 'a' * 40; $OLD = 'b' * 40
+Assert-Equal (@(Test-PublishReady -OutputDir $bo -HeadCommit $H -TreeDirty $false -CommitOnOrigin $true).Count -gt 0) $true 'no BUILD-INFO.json: not ready to publish'
+foreach ($v in 'emulated', 'win95', 'dos') { Update-BuildInfo -OutputDir $bo -Variant $v -Commit $H -Dirty $false -Rebuilt $true }
+Set-BuildInfoZip -OutputDir $bo -Commit $H
+Assert-Equal @(Test-PublishReady -OutputDir $bo -HeadCommit $H -TreeDirty $false -CommitOnOrigin $true).Count 0 'everything consistent: ready'
+Assert-Equal (@(Test-PublishReady -OutputDir $bo -HeadCommit $H -TreeDirty $true -CommitOnOrigin $true) -join ' ') 'The working tree has uncommitted changes to tracked files.' 'dirty tree now: not ready'
+Assert-Equal ((@(Test-PublishReady -OutputDir $bo -HeadCommit $H -TreeDirty $false -CommitOnOrigin $false) -join ' ') -match 'not on origin') $true 'commit not pushed to origin: not ready'
+Assert-Equal ((@(Test-PublishReady -OutputDir $bo -HeadCommit $OLD -TreeDirty $false -CommitOnOrigin $true) -join ' ') -match 'HEAD') $true 'HEAD moved since the build: not ready'
+Update-BuildInfo -OutputDir $bo -Variant dos -Commit $OLD -Dirty $false -Rebuilt $true
+Assert-Equal ((@(Test-PublishReady -OutputDir $bo -HeadCommit $H -TreeDirty $false -CommitOnOrigin $true) -join ' ') -match 'dos') $true 'one variant built from another commit than the zip: not ready'
+Update-BuildInfo -OutputDir $bo -Variant dos -Commit $H -Dirty $false -Rebuilt $false
+Assert-Equal ((@(Test-PublishReady -OutputDir $bo -HeadCommit $H -TreeDirty $false -CommitOnOrigin $true) -join ' ') -match 'rebuild') $true 'variant not freshly rebuilt: not ready'
+Update-BuildInfo -OutputDir $bo -Variant dos -Commit $H -Dirty $true -Rebuilt $true
+Assert-Equal ((@(Test-PublishReady -OutputDir $bo -HeadCommit $H -TreeDirty $false -CommitOnOrigin $true) -join ' ') -match 'uncommitted') $true 'variant built from a dirty tree: not ready'
+Update-BuildInfo -OutputDir $bo -Variant dos -Commit $H -Dirty $false -Rebuilt $true
+Set-BuildInfoZip -OutputDir $bo -Commit $OLD
+Assert-Equal ((@(Test-PublishReady -OutputDir $bo -HeadCommit $H -TreeDirty $false -CommitOnOrigin $true) -join ' ') -match 'source zip') $true 'source zip from another commit: not ready'
+Remove-Item -LiteralPath $bo -Recurse -Force
 
 if ($script:Failures -gt 0) { Write-Host "$script:Failures failure(s)" -ForegroundColor Red; exit 1 }
 Write-Host 'All tests passed' -ForegroundColor Green

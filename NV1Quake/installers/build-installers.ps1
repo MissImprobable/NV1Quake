@@ -1,3 +1,4 @@
+#Requires -Version 7.0
 <#
 .SYNOPSIS
     Builds the nv1Quake installers (emulated / win95 / dos), a source zip and checksums.
@@ -60,10 +61,12 @@ foreach ($v in $variants) {
             Build-DosInstaller -StageDir $sd -OutExe (Join-Path $output "NV1Quake-$version-DOS-Setup.exe") -Watcom $Watcom -MinGW $MinGW
         }
     }
+    Update-BuildInfo -OutputDir $output -Variant $v -Commit $git.Commit -Dirty $git.Dirty -Rebuilt ([bool]$Rebuild)
 }
 
 # 2. Source offer + checksums (covers whatever is in output\).
 New-SourceZip -OutPath (Join-Path $output "NV1Quake-$version-source.zip")
+Set-BuildInfoZip -OutputDir $output -Commit $git.Commit
 $sums = Get-ChildItem $output -File | Where-Object { $_.Name -ne 'SHA256SUMS.txt' } | Sort-Object Name | ForEach-Object {
     '{0}  {1}' -f (Get-FileHash $_.FullName -Algorithm SHA256).Hash.ToLower(), $_.Name
 }
