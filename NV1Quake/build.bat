@@ -45,7 +45,10 @@ rem net_wins.c and net_wipx.c shadow errno with a local; see src\nv1_errno.h
 cl %CFLAGS% /FInv1_errno.h ..\WinQuake\net_wins.c ..\WinQuake\net_wipx.c
 if errorlevel 1 goto fail
 
-link /nologo /OUT:nv1quake.exe /SUBSYSTEM:WINDOWS %OUT%\*.obj kernel32.lib user32.lib gdi32.lib winmm.lib wsock32.lib comctl32.lib "..\WinQuake\dxsdk\SDK\LIB\dxguid.lib"
+rc /nologo /fo %OUT%\nv1quake.res src\nv1quake.rc
+if errorlevel 1 goto fail
+
+link /nologo /OUT:nv1quake.exe /SUBSYSTEM:WINDOWS %OUT%\*.obj %OUT%\nv1quake.res kernel32.lib user32.lib gdi32.lib winmm.lib wsock32.lib comctl32.lib "..\WinQuake\dxsdk\SDK\LIB\dxguid.lib"
 if errorlevel 1 goto fail
 
 echo.
