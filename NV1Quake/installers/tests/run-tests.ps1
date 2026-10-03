@@ -57,5 +57,16 @@ foreach ($v in 'emulated','win95','dos') {
     Remove-Item $d -Recurse -Force
 }
 
+# --- New-LegalFiles with a RELATIVE directory (.NET resolves against the process cwd, not the PowerShell location)
+$rel = Join-Path $env:TEMP 'nv1-legal-rel'
+Remove-Item $rel -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory "$rel\work" | Out-Null
+Push-Location "$rel\work"
+New-Item -ItemType Directory 'stage-here' | Out-Null
+New-LegalFiles -Dir 'stage-here' -Variant dos
+Pop-Location
+Assert-Equal (Test-Path "$rel\work\stage-here\NOTICE.TXT") $true 'relative -Dir writes where PowerShell is'
+Remove-Item $rel -Recurse -Force
+
 if ($script:Failures -gt 0) { Write-Host "$script:Failures failure(s)" -ForegroundColor Red; exit 1 }
 Write-Host 'All tests passed' -ForegroundColor Green

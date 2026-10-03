@@ -57,6 +57,7 @@ $script:VariantText = @{
 
 function New-LegalFiles {
     param([string]$Dir, [ValidateSet('emulated','win95','dos')][string]$Variant)
+    $Dir = (Resolve-Path -LiteralPath $Dir).Path   # .NET file APIs resolve relative paths against the process cwd
     $git = Get-GitInfo
     $t = $script:VariantText[$Variant]
     $values = @{
