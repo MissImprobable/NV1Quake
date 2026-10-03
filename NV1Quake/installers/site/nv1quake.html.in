@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>nv1Quake — Quake on the NVIDIA NV1</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="stylesheet" href="../assets/global.css">
+    <link rel="icon" type="image/ico" href="../assets/favicon.ico">
+    <link rel="apple-touch-icon" href="../assets/favicon.ico">
+
+    <!-- SEO -->
+    <meta name="description" content="nv1Quake is a community experiment porting GLQuake to the NVIDIA NV1 / Diamond Edge 3D, the 1995 accelerator that drew quadratic patches instead of triangles. Builds for Windows 10/11 (emulated), Windows 95 and DOS. Free, with source.">
+    <meta name="keywords" content="NV1, Diamond Edge 3D, STG2000, Quake, GLQuake, NVIDIA NV1, quadratic patches, Windows 95, DOS, retro graphics">
+    <meta name="author" content="Abigail — Abnormality Software">
+    <meta name="robots" content="index, follow">
+    <link rel="canonical" href="https://abnormalitysoftware.com/apps/nv1quake">
+
+    <!-- Open Graph -->
+    <meta property="og:type" content="software.application">
+    <meta property="og:title" content="nv1Quake — Quake on the NVIDIA NV1">
+    <meta property="og:description" content="A community experiment porting GLQuake to the NVIDIA NV1 / Diamond Edge 3D. Windows 10/11 (emulated), Windows 95 and DOS builds, free, with source.">
+    <meta property="og:url" content="https://abnormalitysoftware.com/apps/nv1quake">
+    <meta property="og:site_name" content="Abnormality Software">
+
+    <!-- Structured Data -->
+    <script type="application/ld+json">
+    {
+        "@context": "https://schema.org",
+        "@type": "SoftwareApplication",
+        "name": "nv1Quake",
+        "operatingSystem": "Windows, Windows 95, MS-DOS",
+        "applicationCategory": "GameApplication",
+        "offers": { "@type": "Offer", "price": "0", "priceCurrency": "USD" },
+        "author": { "@type": "Person", "name": "Abigail" },
+        "url": "https://abnormalitysoftware.com/apps/nv1quake",
+        "description": "A community experiment porting GLQuake to the NVIDIA NV1 / Diamond Edge 3D accelerator.",
+        "softwareVersion": "@@VERSION@@",
+        "downloadUrl": "https://abnormalitysoftware.com/dl/NV1Quake/@@EMU_FILE@@"
+    }
+    </script>
+</head>
+
+<body class="bg-gradient-to-b from-pink-100 to-blue-100 text-gray-900">
+
+<!-- ── Navigation ──────────────────────────────────────────────────── -->
+<nav class="cute-header text-white shadow-lg">
+    <div class="max-w-6xl mx-auto px-6 py-2 flex flex-col md:flex-row md:items-center md:justify-between">
+        <div class="flex justify-center md:justify-start">
+            <img src="../assets/banner-150px.png"
+                 alt="AbnormalitySoftware Banner"
+                 class="max-h-[150px] w-auto">
+        </div>
+        <div class="flex items-center justify-center md:justify-end md:mr-12 gap-4 py-2 md:py-0">
+            <a href="/" class="nav-link">Home</a>
+            <a href="/blog/" class="nav-link">Blog</a>
+            <a href="/contact" class="nav-link">Contact</a>
+        </div>
+    </div>
+</nav>
+
+<div class="max-w-6xl mx-auto py-10 px-6">
+
+    <a href="../" style="color: #c468a8; font-weight: 600; font-size: 0.9rem; text-decoration: none;">← Back to Home</a>
+
+    <!-- ── Hero ─────────────────────────────────────────────────────── -->
+    <div class="grid grid-cols-1 md:grid-cols-2 gap-10 mt-6 mb-8">
+
+        <div>
+            <!-- PLACEHOLDER ART: the Fragged logo until real nv1Quake art exists.
+                 Replace installers/art/nv1quake-poster.png (same file name) and re-publish. -->
+            <img src="../assets/nv1quake-poster.png"
+                 class="rounded-xl shadow-lg w-full"
+                 style="max-width: 360px; margin: 0 auto; background: #fff;"
+                 alt="nv1Quake">
+        </div>
+
+        <div>
+            <h1 style="font-family: 'Dancing Script', cursive; font-size: 2.4rem; color: #c468a8; font-weight: 700; line-height: 1.2; margin-bottom: 0.5rem;">
+                nv1Quake
+            </h1>
+            <p style="font-size: 0.8rem; color: #9a7aaa; margin-bottom: 1rem;">v@@VERSION@@ — Quake on the NVIDIA NV1 — Free, with source</p>
+
+            <p style="font-size: 1rem; color: #7a5a8a; line-height: 1.8; margin-bottom: 1.25rem;">
+                GLQuake, ported to the NVIDIA NV1 / Diamond Edge 3D — the 1995 accelerator with no
+                depth buffer, no triangles, and a CPU that streams every texel to the chip. It draws
+                <em>quadratic patches</em> instead, and everything in this renderer follows from that.
+            </p>
+            <p style="font-size: 1rem; color: #7a5a8a; line-height: 1.8; margin-bottom: 1.25rem;">
+                Three builds: a software-emulated one that runs on a modern Windows PC, and two for
+                real NV1 hardware — Windows 95 and DOS.
+            </p>
+        </div>
+    </div>
+
+    <!-- ── Community statement (prominent, not a footnote) ─────────── -->
+    <div class="cute-card" style="padding: 1.25rem 1.5rem; margin-bottom: 2rem; border: 2px solid #c468a8;">
+        <p style="font-weight: 700; font-size: 1rem; color: #5a3a6a; margin-bottom: 0.4rem;">💖 A community experiment, made with love</p>
+        <p style="font-size: 0.95rem; color: #7a5a8a; line-height: 1.7; margin-bottom: 0.5rem;">
+            nv1Quake is a community experiment created by passionate fans of id Software and NVIDIA.
+            These applications were created out of love and curiosity. If either company asks us to
+            remove them, we will comply immediately.
+        </p>
+        <p style="font-size: 0.82rem; color: #9a7aaa; line-height: 1.6;">
+            This is an unofficial project. It is not made or endorsed by id Software or NVIDIA.
+            "Quake" is a trademark of id Software. No Quake game data is included &mdash; you need
+            your own copy of Quake.
+        </p>
+    </div>
+
+    <!-- ── Downloads ────────────────────────────────────────────────── -->
+    <h2 style="font-family: 'Dancing Script', cursive; font-size: 1.9rem; color: #c468a8; font-weight: 700; margin-bottom: 1.25rem;">
+        ✦ Downloads
+    </h2>
+    <div class="grid md:grid-cols-3 gap-4 mb-4">
+        <div class="cute-card" style="padding: 1.1rem 1.25rem;">
+            <p style="font-size: 1.3rem; margin-bottom: 0.4rem;">🖥️</p>
+            <p style="font-weight: 700; font-size: 0.95rem; color: #5a3a6a; margin-bottom: 0.3rem;">Windows 10 / 11 — emulated</p>
+            <p style="font-size: 0.82rem; color: #7a5a8a; line-height: 1.5; margin-bottom: 0.75rem; min-height: 5.2rem;">The NV1 chip emulated in software, so you can see what it drew without owning one. Runs on any modern Windows PC.</p>
+            <a href="/dl/NV1Quake/@@EMU_FILE@@" class="cute-button" style="text-align: center; display: block;">⬇ Download (@@EMU_SIZE@@)</a>
+            <p style="font-size: 0.68rem; color: #9a7aaa; margin-top: 0.5rem; word-break: break-all;">SHA-256 @@EMU_SHA@@</p>
+        </div>
+        <div class="cute-card" style="padding: 1.1rem 1.25rem;">
+            <p style="font-size: 1.3rem; margin-bottom: 0.4rem;">🪟</p>
+            <p style="font-weight: 700; font-size: 0.95rem; color: #5a3a6a; margin-bottom: 0.3rem;">Windows 95 — real NV1</p>
+            <p style="font-size: 0.82rem; color: #7a5a8a; line-height: 1.5; margin-bottom: 0.75rem; min-height: 5.2rem;">For a Diamond Edge 3D / NV1 card with the NVIDIA Windows 95 driver. <strong>Not yet run on real hardware.</strong></p>
+            <a href="/dl/NV1Quake/@@W95_FILE@@" class="cute-button" style="text-align: center; display: block;">⬇ Download (@@W95_SIZE@@)</a>
+            <p style="font-size: 0.68rem; color: #9a7aaa; margin-top: 0.5rem; word-break: break-all;">SHA-256 @@W95_SHA@@</p>
+        </div>
+        <div class="cute-card" style="padding: 1.1rem 1.25rem;">
+            <p style="font-size: 1.3rem; margin-bottom: 0.4rem;">💾</p>
+            <p style="font-weight: 700; font-size: 0.95rem; color: #5a3a6a; margin-bottom: 0.3rem;">DOS — real NV1</p>
+            <p style="font-size: 0.82rem; color: #7a5a8a; line-height: 1.5; margin-bottom: 0.75rem; min-height: 5.2rem;">A genuine MS-DOS installer and DOS/4GW build for the NV1 and NVIDIA's DOS resource manager. No sound. <strong>Not yet run on real hardware.</strong></p>
+            <a href="/dl/NV1Quake/@@DOS_FILE@@" class="cute-button" style="text-align: center; display: block;">⬇ Download (@@DOS_SIZE@@)</a>
+            <p style="font-size: 0.68rem; color: #9a7aaa; margin-top: 0.5rem; word-break: break-all;">SHA-256 @@DOS_SHA@@</p>
+        </div>
+    </div>
+    <p style="font-size: 0.85rem; color: #7a5a8a; line-height: 1.7; margin-bottom: 2rem;">
+        <strong>Source code:</strong>
+        <a href="/dl/NV1Quake/@@SRC_FILE@@" style="color: #c468a8; font-weight: 600;">@@SRC_FILE@@</a> (@@SRC_SIZE@@, SHA-256 <span style="word-break: break-all;">@@SRC_SHA@@</span>)
+        &mdash; or on
+        <a href="https://github.com/MissImprobable/NV1Quake" style="color: #c468a8; font-weight: 600;">GitHub</a>.
+        nv1Quake is derived from id Software's GPL Quake source release and is licensed under the GNU General Public License.
+    </p>
+
+    <!-- ── What you need ────────────────────────────────────────────── -->
+    <h2 style="font-family: 'Dancing Script', cursive; font-size: 1.9rem; color: #c468a8; font-weight: 700; margin-bottom: 1.25rem;">
+        ✦ What You Need
+    </h2>
+    <div class="grid md:grid-cols-2 gap-4 mb-8">
+        <div class="cute-card" style="padding: 1.1rem 1.25rem;">
+            <p style="font-weight: 700; font-size: 0.9rem; color: #5a3a6a; margin-bottom: 0.3rem;">Your own copy of Quake</p>
+            <p style="font-size: 0.82rem; color: #7a5a8a; line-height: 1.5;">The installers contain no game data. Copy <code>PAK0.PAK</code> (and <code>PAK1.PAK</code> for the full game) from your own Quake into the <code>id1</code> folder. Quake's data stays copyrighted by id Software.</p>
+        </div>
+        <div class="cute-card" style="padding: 1.1rem 1.25rem;">
+            <p style="font-weight: 700; font-size: 0.9rem; color: #5a3a6a; margin-bottom: 0.3rem;">For the real-hardware builds</p>
+            <p style="font-size: 0.82rem; color: #7a5a8a; line-height: 1.5;">An NV1 card (Diamond Edge 3D, STG2000) and NVIDIA's driver and resource manager. Use <code>-vidmem 2</code> on an Edge 3D 2200 with its expansion modules. The 650,000 texels a frame it asks for is a lot for a period CPU, so start with <code>nv1_subdiv 0.5</code>.</p>
+        </div>
+    </div>
+
+    <!-- ── Honest status ────────────────────────────────────────────── -->
+    <h2 style="font-family: 'Dancing Script', cursive; font-size: 1.9rem; color: #c468a8; font-weight: 700; margin-bottom: 1.25rem;">
+        ✦ Where It's At
+    </h2>
+    <div class="cute-card" style="padding: 1.1rem 1.25rem; margin-bottom: 2rem;">
+        <ul style="font-size: 0.88rem; color: #7a5a8a; line-height: 1.8; padding-left: 1.2rem; list-style: disc;">
+            <li>The emulated build is playable, around 22 fps on <code>demo1</code> at 640x400.</li>
+            <li>The Windows 95 and DOS builds link NVIDIA's real libraries and are correctly formed, but <strong>have never been run on a real NV1</strong>.</li>
+            <li>Known issues: the first-person weapon models still look wrong, textures warp as you move (partly authentic NV1 behaviour), water is opaque, and the hardware sound path has never run.</li>
+        </ul>
+    </div>
+
+    <!-- ── Credits ──────────────────────────────────────────────────── -->
+    <h2 style="font-family: 'Dancing Script', cursive; font-size: 1.9rem; color: #c468a8; font-weight: 700; margin-bottom: 1.25rem;">
+        ✦ Thank You
+    </h2>
+    <div class="cute-card" style="padding: 1.1rem 1.25rem; margin-bottom: 2rem;">
+        <p style="font-size: 0.9rem; color: #7a5a8a; line-height: 1.8;">
+            Huge thanks to everyone at <strong>id Software</strong> for Quake, and for releasing the source;
+            to <strong>NVIDIA</strong> for the NV1 and an SDK with enough in it to work out how the chip really
+            behaves; to the <strong>Quake community</strong> and the <strong>retro gaming community</strong>
+            for keeping all of this alive; and to
+            <a href="https://www.twitch.tv/carcenomy" style="color: #c468a8; font-weight: 600;">Carcenomy</a>
+            for buying an NV1 &mdash; which is what inspired these builds in the first place.
+        </p>
+    </div>
+
+</div>
+
+<footer class="cute-footer text-white mt-12">
+    <div class="max-w-6xl mx-auto px-6 py-10 text-center">
+        <img src="../assets/abby-logo.png" alt="Abigail mascot logo"
+             style="width: 120px; height: 120px; border-radius: 50%; border: 3px solid rgba(255,255,255,0.8); object-fit: cover; display: block; margin: 0 auto 0.6rem;">
+        <p style="font-family: 'Dancing Script', cursive; font-size: 1.15rem; font-weight: 700; margin-bottom: 0.75rem;">Made by Abigail</p>
+        <p style="font-family: 'Dancing Script', cursive; font-size: 1.3rem; font-weight: 700; margin-bottom: 0.25rem;">Abnormality Software</p>
+        <p style="font-size: 0.875rem; opacity: 0.85; margin-bottom: 1rem;">Cute tools for creative humans.</p>
+        <div style="display: flex; gap: 1.25rem; justify-content: center; flex-wrap: wrap; font-size: 0.8rem; opacity: 0.8; margin-bottom: 0.75rem;">
+            <a href="mailto:abby@abnormalitysoftware.com" style="color: white; text-decoration: underline;">abby@abnormalitysoftware.com</a>
+            <a href="/privacy" style="color: white; text-decoration: underline;">Privacy Statement</a>
+            <a href="https://ko-fi.com/abnormalitysoftware" style="color: white; text-decoration: underline;">Ko-fi</a>
+            <a href="https://github.com/MissImprobable" style="color: white; text-decoration: underline;">GitHub</a>
+        </div>
+        <p style="font-size: 0.75rem; opacity: 0.6;">© 2026 Abnormality Software — All Rights Reserved</p>
+    </div>
+</footer>
+
+</body>
+</html>

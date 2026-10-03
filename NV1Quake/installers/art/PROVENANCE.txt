@@ -1,2 +1,3 @@
 Copied from X:epos\FraggedLANManager (Abnormality Software's own Fragged logo) on 2026-10-03.
 Replace with NV1 Quake product art when it exists; keep file names.
+nv1quake-poster.png is a PLACEHOLDER: the Fragged logo (fragged-300px.png). Replace it with real NV1 Quake art, same file name.

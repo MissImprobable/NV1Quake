@@ -128,5 +128,57 @@ Assert-Equal (@($names | Where-Object { $_ -match 'NV1Quake/src/nv1_rmain\.c$' }
 Assert-Equal (@($names | Where-Object { $_ -match '^NV1Quake-0\.10-source/' }).Count -gt 0) $true 'source zip has the versioned prefix'
 Remove-Item $zipPath -Force
 
+# --- Set-VersionsEntry: edits the text in place (ConvertTo-Json would rewrite apostrophes and formatting)
+$vj = Join-Path $env:TEMP 'nv1-versions.json'
+$orig = "{`r`n  `"renamer`": {`r`n    `"name`": `"Abigail's Media Renamer`",`r`n    `"version`": `"1.0.42`",`r`n    `"url`": `"u1`",`r`n    `"pageUrl`": `"p1`"`r`n  },`r`n  `"bindery`": {`r`n    `"name`": `"Bindery`",`r`n    `"version`": `"1.0.0`",`r`n    `"url`": `"u2`",`r`n    `"pageUrl`": `"p2`"`r`n  }`r`n}"
+[IO.File]::WriteAllText($vj, $orig, (New-Object Text.UTF8Encoding($false)))
+Set-VersionsEntry -Path $vj -Version '0.10' -Url 'https://x/e.exe' -PageUrl 'https://x/apps/nv1quake'
+$after1 = [IO.File]::ReadAllText($vj)
+$j = $after1 | ConvertFrom-Json
+Assert-Equal $j.nv1quake.version '0.10' 'new entry is added'
+Assert-Equal $j.nv1quake.name 'nv1Quake' 'entry has a name'
+Assert-Equal $j.bindery.version '1.0.0' 'other apps are untouched'
+Assert-Equal $after1.StartsWith($orig.Substring(0, $orig.Length - 3)) $true 'existing text is byte-identical (apostrophe, CRLF, indent kept)'
+Set-VersionsEntry -Path $vj -Version '0.11' -Url 'https://x/e2.exe' -PageUrl 'https://x/apps/nv1quake'
+$after2 = [IO.File]::ReadAllText($vj)
+$j = $after2 | ConvertFrom-Json
+Assert-Equal $j.nv1quake.version '0.11' 'second publish replaces the version'
+Assert-Equal ([regex]::Matches($after2, '"nv1quake"').Count) 1 'no duplicate entry after a second publish'
+Assert-Equal $after2.StartsWith($orig.Substring(0, $orig.Length - 3)) $true 'existing text still byte-identical after the second publish'
+Assert-Equal ($after2 -match "`r`n") $true 'CRLF line endings preserved'
+Assert-Equal (@($j.PSObject.Properties.Name).Count) 3 'exactly three apps listed'
+Remove-Item $vj
+
+# --- Get-PublishPlan
+$po = Join-Path $env:TEMP 'nv1-pubout'
+Remove-Item $po -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory $po | Out-Null
+foreach ($n in 'NV1Quake-0.10-Emulated-Setup.exe','NV1Quake-0.10-Win95-Setup.exe','NV1Quake-0.10-DOS-Setup.exe','NV1Quake-0.10-source.zip') { Set-Content "$po\$n" "data for $n" }
+$plan = Get-PublishPlan -OutputDir $po -SiteRepo 'X:\fake-site' -Version '0.10'
+Assert-Equal $plan.Files.Count 4 'plan lists four files'
+Assert-Equal $plan.Files[0].R2Key 'NV1Quake/NV1Quake-0.10-Emulated-Setup.exe' 'R2 key uses the NV1Quake/ folder'
+Assert-Equal $plan.Files[3].ContentType 'application/zip' 'zip content type'
+Assert-Equal $plan.Files[0].Sha.Length 64 'SHA-256 is computed'
+Assert-Equal $plan.PagePath 'X:\fake-site\apps\nv1quake.html' 'page path inside the site repo'
+Assert-Equal ($plan.PageHtml -match '@@') $false 'rendered page has no unfilled placeholders'
+foreach ($n in 'NV1Quake-0.10-Emulated-Setup.exe','NV1Quake-0.10-Win95-Setup.exe','NV1Quake-0.10-DOS-Setup.exe','NV1Quake-0.10-source.zip') {
+    Assert-Equal ($plan.PageHtml -match [regex]::Escape("/dl/NV1Quake/$n")) $true "page links $n via the counted /dl/ path"
+}
+Assert-Equal ($plan.PageHtml -match 'passionate fans of id Software and NVIDIA') $true 'page has the community statement'
+Assert-Equal ($plan.PageHtml -match 'we will comply immediately') $true 'page has the takedown promise'
+Assert-Equal ($plan.PageHtml -match 'twitch\.tv/carcenomy') $true 'page credits Carcenomy'
+Assert-Equal ($plan.PageHtml -match 'never been run on a real NV1') $true 'page states the hardware builds are untested'
+Assert-Equal $plan.Assets.Count 1 'plan has one site asset (the poster)'
+Assert-Equal $plan.Assets[0].Dest 'X:\fake-site\assets\nv1quake-poster.png' 'poster goes into the site assets folder'
+Assert-Equal (Test-Path $plan.Assets[0].Source) $true 'poster source art exists in art\'
+Assert-Equal ($plan.PageHtml -match 'assets/nv1quake-poster\.png') $true 'page uses the nv1quake poster'
+Assert-Equal ($plan.PageHtml -match 'fragged-poster') $false 'page no longer uses the Fragged LAN Manager poster'
+Remove-Item "$po\NV1Quake-0.10-DOS-Setup.exe"
+Assert-Throws { Get-PublishPlan -OutputDir $po -SiteRepo 'X:\fake-site' -Version '0.10' } 'DOS-Setup' 'a missing installer aborts the plan'
+Set-Content "$po\NV1Quake-0.10-DOS-Setup.exe" 'x'
+Set-Content "$po\PAK0.PAK" 'x'
+Assert-Throws { Get-PublishPlan -OutputDir $po -SiteRepo 'X:\fake-site' -Version '0.10' } 'PAK' 'game data in output aborts the plan'
+Remove-Item $po -Recurse -Force
+
 if ($script:Failures -gt 0) { Write-Host "$script:Failures failure(s)" -ForegroundColor Red; exit 1 }
 Write-Host 'All tests passed' -ForegroundColor Green
