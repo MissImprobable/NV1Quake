@@ -21,6 +21,38 @@ builds. `nvsoft` is development scaffolding but is held to the same standard.
 
 ---
 
+### 2026-10-03 - Installers for all three builds, the Fragged logo, and a product page
+
+`NV1Quake\installers\build-installers.ps1` now builds three installers from fresh binaries, plus a
+source zip and SHA-256 sums: an Inno Setup installer for the emulated build, a Windows 95 installer
+and a real-mode DOS installer for the hardware builds. They are engine-only (no Quake game data),
+install the GPL text and a notice naming the exact source commit, show that notice before writing
+anything, and credit id Software, NVIDIA and the community (see `installers\README.md`).
+
+- **Vendored the two Fragged retro installer engines** into `installers\retro\` and `installers\dos\`
+  and added a licence/notice screen to each. The Win32 engine did not compile as shipped (its
+  `extract_archive` call disagreed with its own header) - fixed in our copy. The DOS engine was
+  hard-wired to Fragged/Duke (banner text, player name, resolution, invert mouse) - it now takes a
+  title and can hide those fields, and an unattended `/INSTALLDIR=` install no longer waits for a key.
+- **The Fragged logo** is the installer, uninstaller and shortcut icon, the Inno wizard art, the DOS
+  splash, and is now embedded in `nv1quake.exe` and `nv1q95.exe` (`src\nv1quake.rc`, `src\nv1q95.rc`;
+  the Win95 build uses the 16/32 px icon only, which is all Win95 can render).
+- **Product page and publishing:** `publish-to-site.ps1` (dry run by default) prepares one NV1 Quake
+  page with the three downloads and the source, a prominent "community experiment made with love"
+  statement, and the honest status. It edits `versions.json` as text so nothing else in that file
+  changes, and stages only its own files in the site repo.
+- **Bugs found along the way:** `New-LegalFiles` mishandled relative paths; Inno's directory page
+  rejects an empty value (aborting silent installs), so the optional "your Quake data" step is a
+  custom page with a Browse button and a `/DATADIR=` option; `build-installers.ps1` initially failed to
+  run the batch files from PowerShell.
+- **Open licensing questions** (recorded in each installer's `NOTICE.TXT` and in `ISSUES.md`): the
+  Win95/DOS builds statically link NVIDIA's libraries, and `DOS4GW.EXE` comes from Open Watcom; neither
+  redistribution grant could be confirmed.
+- Not tested on real hardware: neither the Win95 nor the DOS installer has run on real Windows 95 or
+  real DOS (Win95 is checked for PE 4.0 and Win95-era imports; DOS runs under DOSBox).
+
+---
+
 ### 2026-10-03 - DOS build: fixed "Corrupted data file" at startup
 
 The DOS build (`build-dos.bat`) died in `COM_CheckRegistered` right after
