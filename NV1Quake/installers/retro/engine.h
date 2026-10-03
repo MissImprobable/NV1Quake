@@ -42,6 +42,11 @@ typedef void (*ExtractProgressFn)(const char *fileName, unsigned long current, u
    needed). Returns 1 on success. onProgress may be NULL. */
 int extract_archive(HINSTANCE hInst, const char *installDir, ExtractProgressFn onProgress, void *progressCtx);
 
+/* The uninstall counterpart of extract_archive: deletes exactly the files the manifest resource
+   lists (and any directories that become empty as a result), nothing else. Files the user added
+   themselves (game data, saves, configs) or another program sharing the folder are left alone. */
+void remove_archive_files(HINSTANCE hInst, const char *installDir);
+
 /* ---- config-file editing primitives, shared across every game profile ---- */
 
 /* Classic Windows .ini style: [Section]\r\nKey=Value\r\n. Creates the

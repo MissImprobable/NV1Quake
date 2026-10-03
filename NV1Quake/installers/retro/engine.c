@@ -214,6 +214,69 @@ int extract_archive(HINSTANCE hInst, const char *installDir, ExtractProgressFn o
     return 1;
 }
 
+void remove_archive_files(HINSTANCE hInst, const char *installDir)
+{
+    HRSRC hManifestRes;
+    HGLOBAL hManifestData;
+    const unsigned char *manifest;
+    unsigned long fileCount, i;
+
+    hManifestRes = FindResource(hInst, MAKEINTRESOURCE(IDR_MANIFEST), RT_RCDATA);
+    if (!hManifestRes)
+    {
+        return;
+    }
+    hManifestData = LoadResource(hInst, hManifestRes);
+    manifest = hManifestData ? (const unsigned char *)LockResource(hManifestData) : NULL;
+    if (!manifest)
+    {
+        return;
+    }
+
+    nc_memcpy(&fileCount, manifest, sizeof(fileCount));
+    manifest += sizeof(fileCount);
+
+    for (i = 0; i < fileCount; i++)
+    {
+        unsigned long pathLen;
+        char relPath[512];
+        char fullPath[MAX_PATH];
+        unsigned long fileSize;
+        char *slash;
+
+        nc_memcpy(&pathLen, manifest, sizeof(pathLen));
+        manifest += sizeof(pathLen);
+        if (pathLen >= sizeof(relPath))
+        {
+            return; /* corrupt manifest: stop rather than guess */
+        }
+        nc_memcpy(relPath, manifest, pathLen);
+        relPath[pathLen] = '\0';
+        manifest += pathLen;
+        nc_memcpy(&fileSize, manifest, sizeof(fileSize));
+        manifest += sizeof(fileSize);
+
+        nc_snprintf(fullPath, sizeof(fullPath), "%s\\%s", installDir, relPath);
+        SetFileAttributes(fullPath, FILE_ATTRIBUTE_NORMAL);
+        DeleteFile(fullPath);
+
+        /* remove each parent directory up to (not including) installDir, but only if now empty -
+           RemoveDirectory fails on a non-empty directory, which is exactly what protects user files */
+        while ((slash = nc_strrchr(fullPath, '\\')) != NULL)
+        {
+            *slash = '\0';
+            if (nc_strlen(fullPath) <= nc_strlen(installDir))
+            {
+                break;
+            }
+            if (!RemoveDirectory(fullPath))
+            {
+                break;
+            }
+        }
+    }
+}
+
 /* ---- ini editing (real Win95-era API, not hand-rolled) ---- */
 
 int ini_set_value(const char *path, const char *section, const char *key, const char *value)

@@ -125,7 +125,32 @@ static int do_install(HINSTANCE hInstance, const GameProfile *profile, const cha
     return 1;
 }
 
-static void do_uninstall(const GameProfile *profile)
+/* Removes the shortcuts create_default_shortcuts made (and the Start Menu group if it is now empty). */
+static void remove_default_shortcuts(const GameProfile *profile)
+{
+    char buf[MAX_PATH];
+    char groupDir[MAX_PATH];
+    char lnkPath[MAX_PATH];
+
+    if (!profile->exeToLaunchRelative)
+    {
+        return;
+    }
+    if (get_shell_folder("Programs", buf, sizeof(buf)))
+    {
+        nc_snprintf(groupDir, sizeof(groupDir), "%s\\%s", buf, profile->appName);
+        nc_snprintf(lnkPath, sizeof(lnkPath), "%s\\%s.lnk", groupDir, profile->appName);
+        DeleteFile(lnkPath);
+        RemoveDirectory(groupDir); /* only succeeds if empty */
+    }
+    if (get_shell_folder("Desktop", buf, sizeof(buf)))
+    {
+        nc_snprintf(lnkPath, sizeof(lnkPath), "%s\\%s.lnk", buf, profile->appName);
+        DeleteFile(lnkPath);
+    }
+}
+
+static void do_uninstall(const GameProfile *profile, int silent)
 {
     char selfPath[MAX_PATH];
     char installDir[MAX_PATH];
@@ -133,10 +158,13 @@ static void do_uninstall(const GameProfile *profile)
     char *lastSlash;
     char msg[256];
 
-    nc_snprintf(msg, sizeof(msg), "Remove %s?", profile->appName);
-    if (MessageBox(NULL, msg, "Uninstall", MB_YESNO | MB_ICONQUESTION) != IDYES)
+    if (!silent)
     {
-        return;
+        nc_snprintf(msg, sizeof(msg), "Remove %s?\n\nOnly the files nv1Quake installed are removed; your own game data and saves are kept.", profile->appName);
+        if (MessageBox(NULL, msg, "Uninstall", MB_YESNO | MB_ICONQUESTION) != IDYES)
+        {
+            return;
+        }
     }
 
     GetModuleFileName(NULL, selfPath, sizeof(selfPath));
@@ -147,16 +175,21 @@ static void do_uninstall(const GameProfile *profile)
         *lastSlash = '\0';
     }
 
-    /* Deletes everything it can - the running unins.exe itself is left
-       behind (Windows won't let a running exe delete its own file), same
-       situation as the companion client installer's uninstaller. */
-    delete_dir_recursive(installDir);
-    create_dirs_recursive(installDir); /* delete_dir_recursive also removes the (non-empty) dir itself and fails - recreate it so unins.exe has somewhere to sit until the batch cleans up */
+    /* Deletes exactly the files this installer put there (taken from its own embedded manifest),
+       NOT the whole folder: the user may have put game data, saves or configs in it, or chosen a
+       folder shared with other programs. The running unins.exe itself is left behind (Windows
+       won't let a running exe delete its own file); the batch below removes it and the folder
+       if, and only if, the folder is then empty. */
+    remove_archive_files(GetModuleHandle(NULL), installDir);
+    remove_default_shortcuts(profile);
 
     uninstall_key_path(profile, keyPath, sizeof(keyPath));
     RegDeleteKey(HKEY_LOCAL_MACHINE, keyPath);
 
-    MessageBox(NULL, "Uninstalled.", "Uninstall", MB_OK | MB_ICONINFORMATION);
+    if (!silent)
+    {
+        MessageBox(NULL, "Uninstalled.", "Uninstall", MB_OK | MB_ICONINFORMATION);
+    }
 
     {
         char tempDir[MAX_PATH];
@@ -398,7 +431,7 @@ int run_installer(HINSTANCE hInstance, LPSTR lpCmdLine, const GameProfile *profi
 
     if (lpCmdLine && nc_strstr(lpCmdLine, "/uninstall"))
     {
-        do_uninstall(profile);
+        do_uninstall(profile, nc_strstr(lpCmdLine, "/silent") != NULL);
         return 0;
     }
 

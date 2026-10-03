@@ -1,3 +1,4 @@
-Copied from a local copy (Abnormality Software's own Fragged logo) on 2026-10-03.
-Replace with NV1 Quake product art when it exists; keep file names.
-nv1quake-poster.png is a PLACEHOLDER: the Fragged logo (fragged-300px.png). Replace it with real NV1 Quake art, same file name.
+The icons and wizard images here (app.ico, retro-app-small.ico, fragged-wizard.bmp,
+fragged-wizard-small.bmp) are Abnormality Software's own Fragged logo, copied in on 2026-10-03.
+
+The product page poster is not part of this repo.

@@ -20,3 +20,5 @@
 # installer build output
 /NV1Quake/installers/stage/
 /NV1Quake/installers/output/
+/NV1Quake/installers/stdout.txt
+/NV1Quake/installers/stderr.txt
