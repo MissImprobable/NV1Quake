@@ -8,3 +8,10 @@
 /NV1Quake/objnv1/
 /NV1Quake/stdout.txt
 /NV1Quake/stderr.txt
+
+# Not part of this repo: NVIDIA's SDK, Quake game data, and built release folders
+/NV1/
+/id1/
+/Release/
+/NV1Quake/id1/
+/currenttask.md
