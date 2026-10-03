@@ -1,0 +1,99 @@
+# nv1Quake
+
+GLQuake ported to the NVIDIA NV1 / Diamond Edge 3D / SGS-Thomson STG2000,
+against the NVIDIA SDK 1.50 in `../NV1`.
+
+The NV1 has no depth buffer, no transform hardware, no multitexture and no
+triangle primitive. It draws **quadratic patches**: nine integer screen-space
+control points, with the CPU streaming a power-of-two grid of texels at it. A
+primitive costs its texel count and nothing else — how large it lands on screen
+is irrelevant. Everything in this renderer follows from those facts.
+
+See `../CHANGELOG.md` for the full design record.
+
+## Building
+
+    build.bat        -> nv1quake.exe   software NV1, runs on a modern PC
+    build-nv1.bat    -> nv1q95.exe     real NV1 hardware, Windows 95
+
+The first uses MSVC and links `nvsoft/`. The second uses **Open Watcom** and
+links NVIDIA's shipped `nvlib.lib` — no emulator in it at all. Watcom because a
+modern MSVC binary cannot run on Windows 95, and because the SDK ships Watcom
+flavours of its import libraries.
+
+Both are 32-bit x86 ANSI C on plain command lines. `nv1q95.exe` is verified as
+an i386 PE, Windows GUI subsystem, subsystem version 4.0, statically linked
+runtime, importing `NVAPI.DLL` and `NVVIDMOD.DLL`.
+
+Ready-to-run folders for both, with `id1/` and READMEs, are in `../Release/`.
+
+## Running
+
+Needs `id1/PAK0.PAK` (and `PAK1.PAK` for registered) under the base directory:
+
+    nv1quake.exe -basedir X:\repos\Quake -window
+
+## Layout
+
+| Path | What it is |
+|---|---|
+| `src/` | the port: video, 2D, transform/submission, world, models, sky/water |
+| `src/nv1quake.h` | the NV1 renderer interface |
+| `src/GL/` | type-only shim so id's `glquake.h` still compiles (see below) |
+| `nvsoft/` | **phase 1 only** — software NV1, emulates the chip |
+
+Nothing under `WinQuake/`, `QW/`, `qw-qc/` or `NV1/` is modified. The port
+compiles ~40 shared files straight out of `WinQuake/`.
+
+### Why `src/GL/gl.h` exists
+
+`quakedef.h` reaches the renderer interface with a quoted
+`#include "glquake.h"`, and MSVC resolves quoted includes relative to the
+*including* file — `WinQuake` — before any `-I` path. So id's `glquake.h`
+cannot be shadowed. It is used as-is; the shim satisfies the `<GL/gl.h>` it
+opens with (angle-bracket includes *do* honour `-I` order), and the NV1
+interface lives separately in `src/nv1quake.h`.
+
+## Phases
+
+1. **Phase 1 (done)** — renderer against the real NVLIB API, plus a software
+   NV1 so it runs and can be iterated on a modern machine.
+2. **Phase 2 (builds, never run)** — Win95 build linking the real `nvlib.lib`.
+   Waiting on hardware.
+3. **Phase 3 (not started)** — DOS build against `nvlibdos.lib` + `nvrm.lib` +
+   DOS4GW. Closer than it was now that Watcom is in place, and the DOS library
+   is Watcom-built so the MSVC runtime shim would not be needed.
+
+## Known issues
+
+- **The first-person weapon models still look wrong.** Everything else — world,
+  monsters, items, sky, water — looks right. The view model is the hardest case
+  here: it sits a few units from the eye, so it is heavily near-plane clipped
+  and spans a large depth ratio, which a quadratic patch represents badly.
+  Flagged for a future pass.
+- Water is opaque; the patch path's transparency is one bit, not a blend.
+- Screenshots and `envmap` need a framebuffer readback that is not wired up.
+- `src/nv1_snd.c` (audio through the NV1's own engine) has never been run.
+
+## Tuning
+
+On this chip performance *is* the texel budget. `r_speeds 1` reports patches
+and texels per frame; `nv1_showtexels 1` reports just those.
+
+| cvar | default | effect |
+|---|---|---|
+| `nv1_subdiv` | 1 | texels per screen pixel. 0.5 quarters the texel traffic |
+| `nv1_maxsubdiv` | 6 | ceiling on subdivision power (6 = 64 texels a side) |
+| `nv1_minsubdiv` | 2 | floor |
+| `nv1_zslab` | 4 | max depth ratio one patch may span before chopping along z |
+| `nv1_worldsubdiv` | 128 | world geometry chop, in units. 0 disables |
+| `nv1_skylayers` | 2 | 1 drops the cloud layer, halving what sky costs |
+| `nv1_lightmap` | 1 | per-vertex beta lighting |
+| `nv1_maxtexture` | 256 | largest texture edge |
+| `nv1_clear` | 1 | clear each frame. 2 clears magenta, to expose holes |
+| `nv1_vidmem` | 1 | framebuffer megabytes; 2 for an expanded Edge 3D 2200 |
+
+`-vidmem 2` sets the last one from the command line.
+
+Measured baseline: `demo1` at 640x400 — 969 frames, 44.3 s, 21.9 fps in the
+software emulator, ~1,100 patches and ~650,000 texels per frame.

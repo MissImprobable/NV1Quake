@@ -1,0 +1,80 @@
+Debugging aids for the DOS "Corrupted data file" problem (ISSUES.md #1)
+======================================================================
+
+paktest.c
+---------
+Standalone DOS program that opens id1\pak1.pak, walks the directory, finds
+gfx/pop.lmp, seeks to it and reads 256 bytes, printing the offset, length and a
+checksum.
+
+It PASSES: offset 1896636, length 256, sum=1290666, which matches the host.
+That is what rules out plain file I/O as the cause.
+
+Build:
+    set WATCOM=C:\WATCOM
+    set PATH=%WATCOM%\binnt;%WATCOM%\binw;%PATH%
+    set INCLUDE=%WATCOM%\h
+    set LIB=%WATCOM%\lib386;%WATCOM%\lib386\dos
+    wcl386 -bt=dos -mf -5r -zq -l=dos4g paktest.c
+
+Then drop paktest.exe next to DOS4GW.EXE in Release\NV1Quake-DOS and run it.
+
+
+dosbox.conf
+-----------
+Mounts Release\NV1Quake-DOS as C: and runs NV1QUAKE.EXE. Edit the last line of
+[autoexec] to run PAKTEST.EXE instead when testing that.
+
+    "C:\Program Files (x86)\DOSBox-0.74-3\DOSBox.exe" -conf dosbox.conf
+
+Note: when screenshotting DOSBox programmatically, it has TWO windows -- the
+emulated screen and a logging console. Grab the one whose client area is the
+DOS resolution (640x400), not the 960x480 log window.
+
+
+Re-adding the instrumentation
+-----------------------------
+1. Sys_FileSeek / Sys_FileRead in src\nv1_sysdos.c
+
+   In Sys_FileSeek, print handle, position, the fseek return and ftell after.
+   In Sys_FileRead, when count == 256, print handle, count, the fread return,
+   ftell after, and the sum of the 128 shorts just read.
+
+   This is what showed Quake asking for "seek h=2 pos=12" -- i.e. the wrong
+   pak directory entry -- rather than 1896636.
+
+2. common.c
+
+   Copy WinQuake\common.c to NV1Quake\src\nv1_commondbg.c (do NOT edit the
+   original), and immediately after this line in COM_FindFile:
+
+       Sys_Printf ("PackFile: %s : %s\n",pak->filename, filename);
+
+   add:
+
+       Sys_Printf ("DBG i=%d nm=[%s] pos=%d len=%d nf=%d szpf=%d\n",
+        i, pak->files[i].name, pak->files[i].filepos, pak->files[i].filelen,
+        pak->numfiles, (int)sizeof(packfile_t));
+       Sys_Printf ("DBG e0=[%s] p=%d  e54=[%s] p=%d\n",
+        pak->files[0].name, pak->files[0].filepos,
+        pak->files[54].name, pak->files[54].filepos);
+
+   Then in build-dos.bat swap "common" for "nv1_commondbg" in the two source
+   lists (remove it from the WinQuake list, add it to the src list).
+
+   Expected: gfx/pop.lmp is entry 55 of pak1.pak at filepos 1896636.
+   Entry 0 is sound/misc/basekey.wav at filepos 12 -- which is the offset
+   Quake wrongly seeks to. The print tells you at once whether the strcmp
+   matched the wrong index or whether index 55's filepos is corrupt.
+
+   sizeof(packfile_t) should be 72 (char name[64] + 2 ints).
+
+Remember to remove the instrumentation and delete nv1_commondbg.c afterwards.
+
+
+Cheapest thing to try first
+---------------------------
+build-dos.bat compiles with no -zp flag, while build-nv1.bat uses -zp8. If
+some translation unit disagrees about struct packing, packfile_t's stride
+would differ and index 55 would read garbage -- which matches the symptom
+exactly. Add -zp8 to the DOS CFLAGS and rerun before doing anything else.
