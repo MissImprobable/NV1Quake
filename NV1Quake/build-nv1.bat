@@ -97,6 +97,7 @@ rem Plain `system nt` produces a console-subsystem binary.
 >> nv1q95.lnk echo option quiet
 >> nv1q95.lnk echo option map=nv1q95.map
 >> nv1q95.lnk echo option stack=0x100000
+>> nv1q95.lnk echo option resource=%OUT%\nv1q95.res
 >> nv1q95.lnk echo libpath %WATCOM%\lib386
 >> nv1q95.lnk echo libpath %WATCOM%\lib386\nt
 for %%f in (%OUT%\*.obj) do >> nv1q95.lnk echo file %%f
@@ -111,6 +112,9 @@ rem `system nt` pulls in the register-convention ones by default, which do not
 rem carry the _sprintf style names our -ecc objects and nvlib.lib both want.
 >> nv1q95.lnk echo library clib3s.lib
 >> nv1q95.lnk echo library math387s.lib
+
+wrc -q -r -bt=nt -fo=%OUT%\nv1q95.res src\nv1q95.rc
+if errorlevel 1 goto fail
 
 wlink @nv1q95.lnk
 if errorlevel 1 goto fail
