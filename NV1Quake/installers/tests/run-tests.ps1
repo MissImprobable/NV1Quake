@@ -86,5 +86,47 @@ Set-Content $empty "line one`r`n`r`nline three" -Encoding ASCII
 ConvertTo-NoticeHeader -NoticePath $empty -OutPath $h
 Assert-Equal (@(Get-Content $h | Where-Object { $_ -match '^\s+"",$' }).Count) 1 'blank lines are kept'
 
+# --- Stage-Variant (uses fake binaries, so no real build is needed)
+$fake = Join-Path $env:TEMP 'nv1-fakebuild'
+Remove-Item $fake -Recurse -Force -ErrorAction SilentlyContinue
+New-Item -ItemType Directory $fake | Out-Null
+foreach ($n in 'nv1quake.exe','nv1q95.exe','nv1qdos.exe') { Set-Content "$fake\$n" 'MZ' }
+$stageRoot = Join-Path $env:TEMP 'nv1-stageroot'
+Remove-Item $stageRoot -Recurse -Force -ErrorAction SilentlyContinue
+foreach ($v in 'emulated','win95','dos') {
+    Stage-Variant -Variant $v -StageRoot $stageRoot -BuildDir $fake
+    Assert-Equal (Test-Path "$stageRoot\$v\NV1QUAKE.EXE") $true "$v stage has NV1QUAKE.EXE"
+    Assert-Equal (Test-Path "$stageRoot\$v\NOTICE.TXT") $true "$v stage has NOTICE.TXT"
+    Assert-Equal (Test-Path "$stageRoot\$v\id1\PUT_PAKS.TXT") $true "$v stage has the id1 placeholder"
+}
+Assert-Equal (Test-Path "$stageRoot\win95\NVVIDMOD.DLL") $true 'win95 stage has NVVIDMOD.DLL'
+Assert-Equal (Test-Path "$stageRoot\win95\nv1quake.ico") $true 'win95 stage has the icon'
+Assert-Equal (Test-Path "$stageRoot\dos\DOS4GW.EXE") $true 'dos stage has DOS4GW.EXE'
+Assert-Equal (Test-Path "$stageRoot\emulated\NVVIDMOD.DLL") $false 'emulated stage has no NVIDIA DLL'
+Assert-Equal (Test-Path "$stageRoot\emulated\DOS4GW.EXE") $false 'emulated stage has no DOS extender'
+Remove-Item "$fake\nv1q95.exe"
+Assert-Throws { Stage-Variant -Variant win95 -StageRoot $stageRoot -BuildDir $fake } 'nv1q95.exe' 'missing exe aborts staging'
+Set-Content "$fake\nv1qdos.exe" 'MZ'
+Set-Content "$stageRoot\dos\STALE.TXT" 'leftover from an earlier build'
+New-Item -ItemType Directory "$stageRoot\dos\id1" -Force | Out-Null
+Set-Content "$stageRoot\dos\id1\PAK0.PAK" 'x'
+Stage-Variant -Variant dos -StageRoot $stageRoot -BuildDir $fake
+Assert-Equal (Test-Path "$stageRoot\dos\id1\PAK0.PAK") $false 're-staging wipes a leftover PAK'
+Assert-Equal (Test-Path "$stageRoot\dos\STALE.TXT") $false 're-staging wipes stale files'
+Remove-Item $fake -Recurse -Force
+Remove-Item $stageRoot -Recurse -Force
+
+# --- New-SourceZip: really contains the port, and no game data
+$zipPath = Join-Path $env:TEMP 'nv1-test-source.zip'
+New-SourceZip -OutPath $zipPath
+Add-Type -AssemblyName System.IO.Compression.FileSystem
+$z = [IO.Compression.ZipFile]::OpenRead($zipPath)
+$names = $z.Entries | ForEach-Object { $_.FullName }
+$z.Dispose()
+Assert-Equal (@($names | Where-Object { $_ -match '\.pak$' }).Count) 0 'source zip has no PAK files'
+Assert-Equal (@($names | Where-Object { $_ -match 'NV1Quake/src/nv1_rmain\.c$' }).Count) 1 'source zip contains the port'
+Assert-Equal (@($names | Where-Object { $_ -match '^NV1Quake-0\.10-source/' }).Count -gt 0) $true 'source zip has the versioned prefix'
+Remove-Item $zipPath -Force
+
 if ($script:Failures -gt 0) { Write-Host "$script:Failures failure(s)" -ForegroundColor Red; exit 1 }
 Write-Host 'All tests passed' -ForegroundColor Green
