@@ -10,6 +10,10 @@ buffer, and streamed every texel from the CPU.
 id's original source is still here, untouched (`WinQuake/`, `QW/`, `qw-qc/`). All
 of the work lives in [`NV1Quake/`](NV1Quake/).
 
+> **The NVIDIA NV1 SDK (1.50) is required to compile this.** It is NVIDIA's, it is
+> not included in this repository, and none of the builds will compile without it.
+> You also need Quake's game data to run the result. See [Building](#building).
+
 ## What we did
 
 - **A renderer written against the real NVLIB 1.50 API.** No depth buffer, so the
@@ -49,8 +53,11 @@ was designed around it, and what went wrong along the way.
 
 You supply two things this repo does not contain:
 
-1. **The NVIDIA NV1 SDK 1.50**, unpacked as `NV1/` in the repo root (so that
-   `NV1/NV/SDK/INC` exists). It is NVIDIA's and is not redistributed here.
+1. **The NVIDIA NV1 SDK 1.50 - required to compile, every build.** Unpack it as
+   `NV1/` in the repo root (so that `NV1/NV/SDK/INC` and `NV1/NV/SDK/LIB` exist).
+   Even the software-emulated build includes NVIDIA's headers, and the hardware
+   builds link NVIDIA's `nvlib.lib`, `nvlibdos.lib` and `nvrm.lib`. It is
+   NVIDIA's and is not redistributed here.
 2. **Quake's game data**, `id1/PAK0.PAK` (and `PAK1.PAK` for the registered game).
    The shareware data is freely redistributable; the registered data is not.
 
