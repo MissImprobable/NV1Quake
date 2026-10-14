@@ -1,4 +1,4 @@
-; nv1Quake - emulated (software NV1) build. Compile via the installer build.
+; nv1Quake - emulated (software NV1) build. Compiled by the installer build.
 #ifndef AppVersion
   #define AppVersion "0.10"
 #endif

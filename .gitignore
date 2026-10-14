@@ -22,3 +22,10 @@
 /NV1Quake/installers/output/
 /NV1Quake/installers/stdout.txt
 /NV1Quake/installers/stderr.txt
+
+# Local-only tooling and working notes (not part of the public source)
+/NV1Quake/installers/**/*.ps1
+/NV1Quake/installers/site/
+/docs/superpowers/
+/CLAUDE.md
+/.claude/

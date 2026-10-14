@@ -21,7 +21,14 @@ builds. `nvsoft` is development scaffolding but is held to the same standard.
 
 ---
 
-### 2026-10-03 - Installers for all three builds, the Fragged logo, and a product page
+## v0.10
+
+### New: Installers for all three builds, the Fragged logo, and a product page (2026-10-03)
+
+**User-facing:** nv1Quake now comes with proper installers: one for the emulated build that runs on any modern Windows PC, one for Windows 95 and one for real-mode DOS, plus a zip of the source. They contain the engine only (you bring your own Quake game files), show the licence and credits before installing anything, and use the Fragged logo.
+
+**Implementation:**
+
 
 `NV1Quake\installers\` now builds three installers from fresh binaries, plus a
 source zip and SHA-256 sums: an Inno Setup installer for the emulated build, a Windows 95 installer
@@ -39,8 +46,8 @@ anything, and credit id Software, NVIDIA and the community (see `installers\READ
   the Win95 build uses the 16/32 px icon only, which is all Win95 can render).
 - **Product page:** one NV1 Quake page with the three downloads and the source, a prominent
   "community experiment made with love" statement, and the honest status.
-- **Bugs found along the way:** the legal-file generator mishandled relative paths; Inno's directory page
-  rejects an empty value (aborting silent installs), so the optional "your Quake data" step is a
+- **Bugs found along the way:** the legal-file generator mishandled relative paths; Inno's directory
+  page rejects an empty value (aborting silent installs), so the optional "your Quake data" step is a
   custom page with a Browse button and a `/DATADIR=` option; the installer build initially failed to
   run the engine batch files.
 - **Open licensing questions** (recorded in each installer's `NOTICE.TXT` and in `ISSUES.md`): the
@@ -58,7 +65,11 @@ anything, and credit id Software, NVIDIA and the community (see `installers\READ
 
 ---
 
-### 2026-10-03 - DOS build: fixed "Corrupted data file" at startup
+### Fixed: DOS build "Corrupted data file" at startup (2026-10-03)
+
+**User-facing:** The DOS build no longer stops at startup with a "Corrupted data file" error, so it now gets as far as loading the game data under DOSBox.
+
+**Implementation:**
 
 The DOS build (`build-dos.bat`) died in `COM_CheckRegistered` right after
 loading the pak files. Cause: `NVRM.LIB`'s `osinit.c` defines its own `strcmp_`,
@@ -75,7 +86,15 @@ modified.
 
 ---
 
-### 2026-09-07 (later) - Phase 2: links against the real NVLIB, targets Windows 95
+## Pre-release history
+
+Work from before the first versioned release (v0.10, the installers). No version numbers were assigned at the time.
+
+### New: Phase 2, links against the real NVLIB and targets Windows 95 (2026-09-07, later)
+
+**User-facing:** There is now a Windows 95 build that talks to the real NVIDIA driver library instead of the emulator, along with several drawing fixes (the weapon model, doors and transparency) and a window size that matches the card's real 640x400 mode. It has not yet been run on actual NV1 hardware.
+
+**Implementation:**
 
 `build-nv1.bat` produces **nv1q95.exe**: no emulator, no `nvsoft`, linked
 against NVIDIA's shipped `nvlib.lib`. Verified as a 32-bit i386 PE, Windows
@@ -197,7 +216,11 @@ down when the texel budget is too high.
 
 ---
 
-### 2026-09-07 — Phase 1: first working build
+### New: Phase 1, first working build (2026-09-07)
+
+**User-facing:** nv1Quake can now play Quake through a software emulation of the NVIDIA NV1 chip, at 640x400 with 32768 colours, running at about 22 frames per second on a demo.
+
+**Implementation:**
 
 **nv1Quake renders Quake.** 640x400, 32768 colours, double buffered, entirely
 through NV1 quadratic patches, with no depth buffer.
