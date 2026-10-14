@@ -90,6 +90,9 @@ rem libraries, and they are the right ones here: nvvidmod.h declares
 rem NvRequestVideoMode with `#pragma aux (__stdcall) ... "*"` under __WATCOMC__,
 rem which asks for an UNDECORATED name, while the MS flavours export the
 rem decorated _NvRequestVideoMode@16.  NVIDIA shipped both for this reason.
+rem Stack is COMMITTED up front, not just reserved: -s means no stack probes, and
+rem Win9x only grows a stack by one guard page, so COM_LoadPackFile's 128K frame
+rem (and other 4K+ frames) page-faulted in nv1q95.exe on a real Win95 box.
 rem nt_win, not nt: Quake's entry point is WinMain and it is a GUI app.
 rem Plain `system nt` produces a console-subsystem binary.
 > nv1q95.lnk echo system nt_win
@@ -97,6 +100,7 @@ rem Plain `system nt` produces a console-subsystem binary.
 >> nv1q95.lnk echo option quiet
 >> nv1q95.lnk echo option map=nv1q95.map
 >> nv1q95.lnk echo option stack=0x100000
+>> nv1q95.lnk echo commit stack=0x100000
 >> nv1q95.lnk echo option resource=%OUT%\nv1q95.res
 >> nv1q95.lnk echo libpath %WATCOM%\lib386
 >> nv1q95.lnk echo libpath %WATCOM%\lib386\nt

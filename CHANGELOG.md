@@ -21,6 +21,16 @@ builds. `nvsoft` is development scaffolding but is held to the same standard.
 
 ---
 
+## Unreleased
+
+### Fixed: Windows 95 build crashed on start-up on real NV1 hardware (2026-10-15)
+
+**User-facing:** The Windows 95 version of nv1Quake crashed with an "illegal operation" message as soon as it started loading the game files. It now starts normally.
+
+**Implementation:** `nv1q95.exe` faulted at 0x407dd3 inside `COM_LoadPackFile`, whose `dpackfile_t info[MAX_FILES_IN_PACK]` local makes a 128 KB stack frame. The Open Watcom build uses `-s` (no stack probes) and the linker only committed 64 KB of the 1 MB stack; Win9x grows a stack one guard page at a time, so the first touch past the frame skipped the guard page and page-faulted. NT is more forgiving, which is why the emulated build was fine. `build-nv1.bat` now adds `commit stack=0x100000`, so the whole stack is committed at load. This also covers the other 4 KB+ frames (`CL_ParseServerInfo` 32 KB, `Host_Loadgame_f` 33 KB, `Con_CheckResize`, and others). Not yet confirmed on real hardware. The installer stage and `installers/output` still hold the old exe until the installers are rebuilt.
+
+---
+
 ## v0.10
 
 ### New: Installers for all three builds, the Fragged logo, and a product page (2026-10-03)
