@@ -34,6 +34,7 @@ than Windows here.
 
 #include "quakedef.h"
 #include "nv1quake.h"
+#include "nv1_diag.h"
 
 cvar_t	m_filter = {"m_filter", "0"};
 
@@ -56,11 +57,16 @@ void IN_Init (void)
 	Cvar_RegisterVariable (&m_filter);
 
 	if (COM_CheckParm ("-nomouse"))
+	{
+		DIAG_LOG (("IN_Init: -nomouse given, mouse skipped"));
 		return;
+	}
 
 /* function 0: reset driver and read status */
+	DIAG_LOG (("IN_Init: resetting mouse driver (INT 33h function 0)"));
 	regs.w.ax = 0;
 	int386 (0x33, &regs, &regs);
+	DIAG_LOG (("IN_Init: mouse reset returned AX=%04Xh BX=%04Xh", regs.w.ax, regs.w.bx));
 
 	if (regs.w.ax != 0xffff)
 	{

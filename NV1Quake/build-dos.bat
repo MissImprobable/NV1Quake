@@ -31,13 +31,13 @@ set OUT=objdos
 if not exist %OUT% mkdir %OUT%
 
 set INC=-i=src -i=..\WinQuake -i=%SDK%\INC
-set DEF=-DDOS -DGLQUAKE -DNV1_HARDWARE
+set DEF=-DDOS -DGLQUAKE -DNV1_HARDWARE -DNV1_DIAG
 set CFLAGS=-bt=dos -mf -5r -zq -zp8 -otexan -s -w1 %DEF% %INC%
 
 echo compiling the NV1 renderer...
 for %%f in (nv1_viddos nv1_sysdos nv1_indos nv1_draw nv1_rmain nv1_rsurf
             nv1_warp nv1_model nv1_mesh nv1_rmisc nv1_rlight nv1_refrag
-            nv1_screen nv1_part nv1_strcmp) do (
+            nv1_screen nv1_part nv1_strcmp nv1_diag) do (
   wcc386 %CFLAGS% -fo=%OUT%\ src\%%f.c
   if errorlevel 1 goto fail
 )

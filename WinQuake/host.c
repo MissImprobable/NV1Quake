@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // host.c -- coordinates spawning and killing of local servers
 
 #include "quakedef.h"
+#ifdef NV1_DIAG
+#include "nv1_diag.h"
+#endif
 #include "r_local.h"
 
 /*
@@ -134,6 +137,7 @@ void Host_Error (char *error, ...)
 	vsprintf (string,error,argptr);
 	va_end (argptr);
 	Con_Printf ("Host_Error: %s\n",string);
+	DIAG_LOG (("Host_Error: %s", string));
 	
 	if (sv.active)
 		Host_ShutdownServer (false);
@@ -851,27 +855,38 @@ void Host_Init (quakeparms_t *parms)
 	com_argc = parms->argc;
 	com_argv = parms->argv;
 
+	DIAG_LOG (("Host_Init: membase %p memsize %d standard_quake %d", parms->membase, parms->memsize, (int)standard_quake));
 	Memory_Init (parms->membase, parms->memsize);
+	DIAG_CP ("Host_Init: Memory_Init done");
 	Cbuf_Init ();
 	Cmd_Init ();	
 	V_Init ();
 	Chase_Init ();
 	Host_InitVCR (parms);
+	DIAG_CP ("Host_Init: entering COM_Init (filesystem)");
 	COM_Init (parms->basedir);
+	DIAG_CP ("Host_Init: COM_Init done");
+	DIAG_HEAP ("after COM_Init");
 	Host_InitLocal ();
 	W_LoadWadFile ("gfx.wad");
+	DIAG_CP ("Host_Init: gfx.wad loaded");
 	Key_Init ();
 	Con_Init ();	
 	M_Init ();	
 	PR_Init ();
+	DIAG_CP ("Host_Init: PR_Init done");
 	Mod_Init ();
 	NET_Init ();
+	DIAG_CP ("Host_Init: NET_Init done");
 	SV_Init ();
+	DIAG_CP ("Host_Init: SV_Init done");
 
 	Con_Printf ("Exe: "__TIME__" "__DATE__"\n");
 	Con_Printf ("%4.1f megabyte heap\n",parms->memsize/ (1024*1024.0));
 	
+	DIAG_CP ("Host_Init: before R_InitTextures");
 	R_InitTextures ();		// needed even for dedicated servers
+	DIAG_CP ("Host_Init: R_InitTextures done");
  
 	if (cls.state != ca_dedicated)
 	{
@@ -885,11 +900,17 @@ void Host_Init (quakeparms_t *parms)
 #ifndef _WIN32 // on non win32, mouse comes before video for security reasons
 		IN_Init ();
 #endif
+		DIAG_CP ("Host_Init: palette and colormap loaded; entering VID_Init");
 		VID_Init (host_basepal);
+		DIAG_CP ("Host_Init: VID_Init done");
+		DIAG_HEAP ("after VID_Init");
 
 		Draw_Init ();
+		DIAG_CP ("Host_Init: Draw_Init done");
 		SCR_Init ();
+		DIAG_CP ("Host_Init: SCR_Init done");
 		R_Init ();
+		DIAG_CP ("Host_Init: R_Init done");
 #ifndef	_WIN32
 	// on Win32, sound initialization has to come before video initialization, so we
 	// can put up a popup if the sound hardware is in use
@@ -902,20 +923,26 @@ void Host_Init (quakeparms_t *parms)
 #endif
 
 #endif	// _WIN32
+		DIAG_CP ("Host_Init: sound init finished (if any); entering CDAudio_Init");
 		CDAudio_Init ();
 		Sbar_Init ();
+		DIAG_CP ("Host_Init: Sbar_Init done");
 		CL_Init ();
+		DIAG_CP ("Host_Init: CL_Init done");
 #ifdef _WIN32 // on non win32, mouse comes before video for security reasons
 		IN_Init ();
 #endif
 	}
 
+	DIAG_CP ("Host_Init: about to queue quake.rc");
 	Cbuf_InsertText ("exec quake.rc\n");
 
 	Hunk_AllocName (0, "-HOST_HUNKLEVEL-");
 	host_hunklevel = Hunk_LowMark ();
 
 	host_initialized = true;
+	DIAG_CP ("Host_Init: complete");
+	DIAG_HEAP ("end of Host_Init");
 	
 	Sys_Printf ("========Quake Initialized=========\n");	
 }
@@ -939,6 +966,7 @@ void Host_Shutdown(void)
 		return;
 	}
 	isdown = true;
+	DIAG_LOG (("Host_Shutdown"));
 
 // keep Con_Printf from trying to update the screen
 	scr_disabled_for_loading = true;

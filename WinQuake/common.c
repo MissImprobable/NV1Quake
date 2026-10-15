@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // common.c -- misc functions used in client and server
 
 #include "quakedef.h"
+#ifdef NV1_DIAG
+#include "nv1_diag.h"
+#endif
 
 #define NUM_SAFE_ARGVS  7
 
@@ -1114,6 +1117,16 @@ void COM_InitArgv (int argc, char **argv)
 		hipnotic = true;
 		standard_quake = false;
 	}
+
+#ifdef NV1_DIAG
+	{
+		int	k;
+
+		DIAG_LOG (("COM_InitArgv: %d arguments after processing, rogue %d hipnotic %d", com_argc, (int)rogue, (int)hipnotic));
+		for (k = 0 ; k < com_argc ; k++)
+			DIAG_LOGV (("  com_argv[%d] = %s", k, com_argv[k]));
+	}
+#endif
 }
 
 
@@ -1397,6 +1410,7 @@ int COM_FindFile (char *filename, int *handle, FILE **file)
 				if (!strcmp (pak->files[i].name, filename))
 				{       // found it!
 					Sys_Printf ("PackFile: %s : %s\n",pak->filename, filename);
+					DIAG_LOGV (("  findfile '%s' -> %s entry %d pos %d len %d", filename, pak->filename, i, pak->files[i].filepos, pak->files[i].filelen));
 					if (handle)
 					{
 						*handle = pak->handle;
@@ -1541,6 +1555,7 @@ byte *COM_LoadFile (char *path, int usehunk)
 
 // look for it in the filesystem or pack files
 	len = COM_OpenFile (path, &h);
+	DIAG_LOGV (("LoadFile %s mode %d -> len %d handle %d", path, usehunk, len, h));
 	if (h == -1)
 		return NULL;
 	
@@ -1616,6 +1631,9 @@ Loads the header and directory, adding the files at the beginning
 of the list so they override previous pack files.
 =================
 */
+#ifdef NV1_DIAG
+static int diag_paklen;
+#endif
 pack_t *COM_LoadPackFile (char *packfile)
 {
 	dpackheader_t   header;
@@ -1627,7 +1645,13 @@ pack_t *COM_LoadPackFile (char *packfile)
 	dpackfile_t             info[MAX_FILES_IN_PACK];
 	unsigned short          crc;
 
+#ifdef NV1_DIAG
+	diag_paklen = Sys_FileOpenRead (packfile, &packhandle);
+	DIAG_LOG (("COM_LoadPackFile: open %s -> length %d handle %d", packfile, diag_paklen, packhandle));
+	if (diag_paklen == -1)
+#else
 	if (Sys_FileOpenRead (packfile, &packhandle) == -1)
+#endif
 	{
 //              Con_Printf ("Couldn't open %s\n", packfile);
 		return NULL;
@@ -1640,6 +1664,9 @@ pack_t *COM_LoadPackFile (char *packfile)
 	header.dirlen = LittleLong (header.dirlen);
 
 	numpackfiles = header.dirlen / sizeof(dpackfile_t);
+	DIAG_LOG (("  pak header: id %c%c%c%c dirofs %d dirlen %d -> %d entries; sizeof(dpackfile_t) %d sizeof(packfile_t) %d; file length %d",
+		header.id[0], header.id[1], header.id[2], header.id[3], header.dirofs, header.dirlen,
+		numpackfiles, (int)sizeof(dpackfile_t), (int)sizeof(packfile_t), diag_paklen));
 
 	if (numpackfiles > MAX_FILES_IN_PACK)
 		Sys_Error ("%s has %i files", packfile, numpackfiles);
@@ -1667,6 +1694,32 @@ pack_t *COM_LoadPackFile (char *packfile)
 		newfiles[i].filelen = LittleLong(info[i].filelen);
 	}
 
+#ifdef NV1_DIAG
+	if (diag_enabled)
+	{
+		int	bad = 0, unterminated = 0, last = numpackfiles - 1;
+
+		for (i=0 ; i<numpackfiles ; i++)
+		{
+			if (newfiles[i].filepos < 0 || newfiles[i].filelen < 0 ||
+				newfiles[i].filepos + newfiles[i].filelen > diag_paklen)
+			{
+				if (bad < 10)
+					DIAG_LOG (("  BAD pak entry %d '%s' pos %d len %d (file is %d bytes)", i, newfiles[i].name, newfiles[i].filepos, newfiles[i].filelen, diag_paklen));
+				bad++;
+			}
+			if (info[i].name[55] != 0)
+				unterminated++;
+			DIAG_LOGV (("  pak entry %4d %-40.40s pos %9d len %9d", i, newfiles[i].name, newfiles[i].filepos, newfiles[i].filelen));
+		}
+		DIAG_LOG (("  pak directory: crc %u (original pak0 %u) %s; %d bad entries, %d unterminated names", (unsigned)crc, (unsigned)PAK0_CRC, crc == PAK0_CRC ? "matches id pak0" : "differs (normal for pak1 or a modified pak)", bad, unterminated));
+		if (numpackfiles > 0)
+		{
+			DIAG_LOG (("  first entry '%s' pos %d len %d", newfiles[0].name, newfiles[0].filepos, newfiles[0].filelen));
+			DIAG_LOG (("  last  entry '%s' pos %d len %d", newfiles[last].name, newfiles[last].filepos, newfiles[last].filelen));
+		}
+	}
+#endif
 	pack = Hunk_Alloc (sizeof (pack_t));
 	strcpy (pack->filename, packfile);
 	pack->handle = packhandle;
@@ -1710,6 +1763,7 @@ void COM_AddGameDirectory (char *dir)
 	{
 		sprintf (pakfile, "%s/pak%i.pak", dir, i);
 		pak = COM_LoadPackFile (pakfile);
+		DIAG_LOG (("pak: %s -> %s", pakfile, pak ? "loaded" : "not found / not opened"));
 		if (!pak)
 			break;
 		search = Hunk_Alloc (sizeof(searchpath_t));
@@ -1735,6 +1789,7 @@ void COM_InitFilesystem (void)
 	char    basedir[MAX_OSPATH];
 	searchpath_t    *search;
 
+	DIAG_LOG (("COM_InitFilesystem: host_parms.basedir '%s'", host_parms.basedir));
 //
 // -basedir <path>
 // Overrides the system supplied base directory (under GAMENAME)

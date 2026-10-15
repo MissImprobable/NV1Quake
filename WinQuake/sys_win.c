@@ -24,6 +24,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "errno.h"
 #include "resource.h"
 #include "conproc.h"
+#ifdef NV1_DIAG
+#include "nv1_diag.h"
+#endif
 
 #define MINIMUM_WIN_MEMORY		0x0880000
 #define MAXIMUM_WIN_MEMORY		0x1000000
@@ -366,6 +369,9 @@ void Sys_Error (char *error, ...)
 	va_start (argptr, error);
 	vsprintf (text, error, argptr);
 	va_end (argptr);
+#ifdef NV1_DIAG
+	DIAG_EXIT ("Sys_Error", text);
+#endif
 
 	if (isDedicated)
 	{
@@ -429,6 +435,15 @@ void Sys_Printf (char *fmt, ...)
 	char		text[1024];
 	DWORD		dummy;
 	
+#ifdef NV1_DIAG
+	if (diag_enabled)
+	{
+		va_start (argptr,fmt);
+		vsprintf (text, fmt, argptr);
+		va_end (argptr);
+		DIAG_CONSOLE (text);
+	}
+#endif
 	if (isDedicated)
 	{
 		va_start (argptr,fmt);
@@ -441,6 +456,9 @@ void Sys_Printf (char *fmt, ...)
 
 void Sys_Quit (void)
 {
+#ifdef NV1_DIAG
+	DIAG_EXIT ("Sys_Quit", NULL);
+#endif
 
 	VID_ForceUnlockedAndReturnState ();
 
@@ -745,7 +763,11 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 
 	parms.argv = argv;
 
+#ifdef NV1_DIAG
+	Diag_Early (parms.argc, parms.argv);
+#endif
 	COM_InitArgv (parms.argc, parms.argv);
+	DIAG_CP ("WinMain: args parsed");
 
 	parms.argc = com_argc;
 	parms.argv = com_argv;
@@ -797,12 +819,16 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 			parms.memsize = Q_atoi (com_argv[t]) * 1024;
 	}
 
+	DIAG_LOG (("heap: %lu KB physical available, asking for %lu KB", (unsigned long)(lpBuffer.dwAvailPhys / 1024), (unsigned long)(parms.memsize / 1024)));
 	parms.membase = malloc (parms.memsize);
+	DIAG_LOG (("heap: malloc returned %p", parms.membase));
 
 	if (!parms.membase)
 		Sys_Error ("Not enough memory free; check disk space\n");
 
+	DIAG_CP ("before Sys_PageIn");
 	Sys_PageIn (parms.membase, parms.memsize);
+	DIAG_CP ("after Sys_PageIn");
 
 	tevent = CreateEvent(NULL, FALSE, FALSE, NULL);
 
@@ -847,7 +873,9 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 	S_BlockSound ();
 
 	Sys_Printf ("Host_Init\n");
+	DIAG_CP ("WinMain: entering Host_Init");
 	Host_Init (&parms);
+	DIAG_CP ("WinMain: Host_Init returned");
 
 	oldtime = Sys_FloatTime ();
 
@@ -884,6 +912,7 @@ int WINAPI WinMain (HINSTANCE hInstance, HINSTANCE hPrevInstance, LPSTR lpCmdLin
 		}
 
 		Host_Frame (time);
+		DIAG_FRAME ();
 		oldtime = newtime;
 	}
 

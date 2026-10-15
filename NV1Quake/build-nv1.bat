@@ -37,13 +37,13 @@ rem -bt=nt   target Win32          -ecc     cdecl, to match nvlib.lib
 rem -otexan  optimise for speed    -zp8     8 byte packing, as MSVC used
 rem -zq      quiet                 -s       no stack overflow checks
 set INC=-i=src -i=..\WinQuake -i=%SDK%\INC -i=..\WinQuake\dxsdk\SDK\INC
-set DEF=-DWIN32 -D_WINDOWS -DGLQUAKE -DNV1_HARDWARE
+set DEF=-DWIN32 -D_WINDOWS -DGLQUAKE -DNV1_HARDWARE -DNV1_DIAG
 set CFLAGS=-bt=nt -zq -ecc -otexan -zp8 -s -w1 %DEF% %INC%
 
 echo compiling the NV1 renderer...
 for %%f in (nv1_vid nv1_draw nv1_rmain nv1_rsurf nv1_warp nv1_model nv1_mesh
             nv1_rmisc nv1_rlight nv1_refrag nv1_screen nv1_part nv1_snd
-            nv1_fpu nv1_sndc nv1_msvcrt) do (
+            nv1_fpu nv1_sndc nv1_msvcrt nv1_diag) do (
   wcc386 %CFLAGS% -fo=%OUT%\ src\%%f.c
   if errorlevel 1 goto fail
 )

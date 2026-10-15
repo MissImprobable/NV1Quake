@@ -49,6 +49,7 @@ make, and the mixer is built to tolerate it.
 #include "quakedef.h"
 #include "nv1quake.h"
 #include "winquake.h"
+#include "nv1_diag.h"
 
 #ifdef NV1_HARDWARE
 
@@ -133,19 +134,24 @@ qboolean SNDDMA_Init (void)
 	if (COM_CheckParm ("-mono"))
 		channels = 1;
 
+	DIAG_LOG (("SNDDMA_Init: %d Hz, %d channel(s); calling NVLIB_InitAudioPipe", rate, channels));
 	if (!NVLIB_InitAudioPipe ())
 	{
+		DIAG_LOG (("SNDDMA_Init: NVLIB_InitAudioPipe failed"));
 		Con_SafePrintf ("NV1: could not open the audio pipe\n");
 		return false;
 	}
 
+	DIAG_LOG (("SNDDMA_Init: calling NVLIB_InitAudio"));
 	if (!NVLIB_InitAudio ())
 	{
+		DIAG_LOG (("SNDDMA_Init: NVLIB_InitAudio failed"));
 		Con_SafePrintf ("NV1: could not initialise audio\n");
 		return false;
 	}
 
 	nv1_snd_stream = NVLIB_FindAudioStream (SAMPLE);
+	DIAG_LOG (("SNDDMA_Init: audio stream id %d", nv1_snd_stream));
 	if (nv1_snd_stream < 0)
 	{
 		Con_SafePrintf ("NV1: no free audio stream\n");
@@ -201,8 +207,10 @@ qboolean SNDDMA_Init (void)
 	shm->buffer = nv1_snd_ring;
 	shm->samplepos = 0;
 
+	DIAG_LOG (("SNDDMA_Init: ring %d bytes in %d slices of %d; starting stream", totalbytes, NV1_SND_SLICES, nv1_snd_slicebytes));
 	if (!NVLIB_PlayAudioStream (nv1_snd_stream))
 	{
+		DIAG_LOG (("SNDDMA_Init: NVLIB_PlayAudioStream failed"));
 		Con_SafePrintf ("NV1: could not start the audio stream\n");
 		SNDDMA_Shutdown ();
 		return false;

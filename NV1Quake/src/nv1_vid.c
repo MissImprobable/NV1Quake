@@ -24,6 +24,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "winquake.h"
 #include "resource.h"
 #include <commctrl.h>
+#include "nv1_diag.h"
 
 #define MAX_MODE_LIST	30
 #define VID_ROW_SIZE	3
@@ -418,8 +419,15 @@ qboolean VID_SetFullDIBMode (int modenum)
 		gdevmode.dmPelsHeight = modelist[modenum].height;
 		gdevmode.dmSize = sizeof (gdevmode);
 
+		DIAG_LOG (("VID_SetFullDIBMode: ChangeDisplaySettings to %lu x %lu, %lu bpp",
+			(unsigned long)gdevmode.dmPelsWidth, (unsigned long)gdevmode.dmPelsHeight,
+			(unsigned long)gdevmode.dmBitsPerPel));
 		if (ChangeDisplaySettings (&gdevmode, CDS_FULLSCREEN) != DISP_CHANGE_SUCCESSFUL)
+		{
+			DIAG_LOG (("VID_SetFullDIBMode: ChangeDisplaySettings FAILED"));
 			Sys_Error ("Couldn't set fullscreen DIB mode");
+		}
+		DIAG_LOG (("VID_SetFullDIBMode: display mode changed"));
 	}
 
 	lastmodestate = modestate;
@@ -637,10 +645,13 @@ void NV1_DeviceInit (void)
 
 /* The division table NVLIB uses to place perspective-correct control points.
    Without this every patch is drawn with alpha 0.5 everywhere. */
+	DIAG_LOG (("NVLIB: InitDivLUT"));
 	NVLIB_InitDivLUT ();
 
+	DIAG_LOG (("NVLIB: InitDBPipe"));
 	if (!NVLIB_InitDBPipe (0))
 		Sys_Error ("NV1: NVLIB_InitDBPipe failed");
+	DIAG_LOG (("NVLIB: InitDBPipe ok; creating draw objects"));
 
 /* RGB555 throughout.  ARGB1555 would give us a transparency bit, but the
    framebuffer is 555 and the alpha-tested textures are handled by skipping
@@ -661,6 +672,7 @@ void NV1_DeviceInit (void)
  */
 
 	NVLIB_SetClip (NVLIB_CLIP_OFF);
+	DIAG_LOG (("NVLIB: device init complete"));
 
 /*
  * Redraw the status bar every frame.
@@ -1755,7 +1767,9 @@ void	VID_Init (unsigned char *palette)
 	Check_Gamma(palette);
 	VID_SetPalette (palette);
 
+	DIAG_LOG (("VID_Init: default mode %d, entering VID_SetMode", vid_default));
 	VID_SetMode (vid_default, palette);
+	DIAG_LOG (("VID_Init: VID_SetMode returned; window %d x %d", DIBWidth, DIBHeight));
 
 /*
  * Ask the resource manager for the mode the card can actually double buffer.
@@ -1764,18 +1778,26 @@ void	VID_Init (unsigned char *palette)
  */
 	nv1_videomode = NV1_VideoModeForSize (DIBWidth, DIBHeight);
 
+	DIAG_LOG (("VID_Init: calling NvRequestVideoMode(RM mode id %d, double buffered, high colour) - "
+		"if the log ends on this line the driver hung or crashed inside it", nv1_videomode));
 	if (!NvRequestVideoMode (global_hInstance, NV_VIDMODE_DOUBLE_BUFFER,
 		nv1_videomode, NV_VIDMODE_HIGH_COLOR))
+	{
+		DIAG_LOG (("VID_Init: NvRequestVideoMode FAILED (returned 0)"));
 		Sys_Error ("NV1: the display driver would not give us a double buffered "
 			"32K colour mode.\n\nnv1Quake needs an NV1 class accelerator "
 			"(Diamond Edge 3D / STG2000) with the NVIDIA resource manager "
 			"installed.");
+	}
+	DIAG_LOG (("VID_Init: NvRequestVideoMode returned success"));
 
 #ifdef NV1_SOFT
 	NVSOFT_SetWindow (mainwindow);
 #endif
 
+	DIAG_LOG (("VID_Init: initialising NVLIB objects"));
 	NV1_DeviceInit ();
+	DIAG_LOG (("VID_Init: NVLIB objects ready"));
 
 	sprintf (gldir, "%s/glquake", com_gamedir);
 	Sys_mkdir (gldir);

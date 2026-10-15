@@ -20,6 +20,9 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 // Z_zone.c
 
 #include "quakedef.h"
+#ifdef NV1_DIAG
+#include "nv1_diag.h"
+#endif
 
 #define	DYNAMIC_SIZE	0xc000
 
@@ -410,10 +413,14 @@ void *Hunk_AllocName (int size, char *name)
 	size = sizeof(hunk_t) + ((size+15)&~15);
 	
 	if (hunk_size - hunk_low_used - hunk_high_used < size)
+	{
+		DIAG_LOG (("hunk FULL: %s wants %d, hunk %d, low used %d, high used %d", name, size, hunk_size, hunk_low_used, hunk_high_used));
 		Sys_Error ("Hunk_Alloc: failed on %i bytes",size);
+	}
 	
 	h = (hunk_t *)(hunk_base + hunk_low_used);
 	hunk_low_used += size;
+	DIAG_LOGV (("hunk: %-8.8s %8d bytes (low used now %d of %d)", name, size, hunk_low_used, hunk_size));
 
 	Cache_FreeLow (hunk_low_used);
 
@@ -915,6 +922,7 @@ void Memory_Init (void *buf, int size)
 	int p;
 	int zonesize = DYNAMIC_SIZE;
 
+	DIAG_LOG (("Memory_Init: base %p size %d (%d KB), zone request %d", buf, size, size / 1024, DYNAMIC_SIZE));
 	hunk_base = buf;
 	hunk_size = size;
 	hunk_low_used = 0;
@@ -931,5 +939,9 @@ void Memory_Init (void *buf, int size)
 	}
 	mainzone = Hunk_AllocName (zonesize, "zone" );
 	Z_ClearZone (mainzone, zonesize);
+#ifdef NV1_DIAG
+	diag_memready = 1;
+#endif
+	DIAG_LOG (("Memory_Init: zone %d bytes at %p, hunk used %d", zonesize, (void *)mainzone, hunk_low_used));
 }
 

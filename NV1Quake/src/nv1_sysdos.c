@@ -50,6 +50,7 @@ neither), and it is why the original vector must be put back on the way out.
 
 #include "quakedef.h"
 #include "nv1quake.h"
+#include "nv1_diag.h"
 
 qboolean		isDedicated;
 
@@ -391,14 +392,17 @@ void Sys_Error (char *error, ...)
 {
 	va_list	argptr;
 
+	static char	errbuf[1024];
+
+	va_start (argptr, error);
+	vsprintf (errbuf, error, argptr);
+	va_end (argptr);
+	DIAG_EXIT ("Sys_Error", errbuf);
+
 	VID_Shutdown ();
 	Sys_UnhookKeyboard ();
 
-	printf ("Sys_Error: ");
-	va_start (argptr, error);
-	vprintf (error, argptr);
-	va_end (argptr);
-	printf ("\n");
+	printf ("Sys_Error: %s\n", errbuf);
 
 	exit (1);
 }
@@ -407,13 +411,24 @@ void Sys_Printf (char *fmt, ...)
 {
 	va_list	argptr;
 
+#ifdef NV1_DIAG
+	static char	msg[4096];
+
+	va_start (argptr, fmt);
+	vsprintf (msg, fmt, argptr);
+	va_end (argptr);
+	fputs (msg, stdout);
+	DIAG_CONSOLE (msg);
+#else
 	va_start (argptr, fmt);
 	vprintf (fmt, argptr);
 	va_end (argptr);
+#endif
 }
 
 void Sys_Quit (void)
 {
+	DIAG_EXIT ("Sys_Quit", NULL);
 	Host_Shutdown ();
 	VID_Shutdown ();
 	Sys_UnhookKeyboard ();
@@ -477,7 +492,11 @@ int main (int argc, char **argv)
 	printf ("nv1Quake %2.2f (Quake %4.2f) -- NVIDIA NV1 / Diamond Edge 3D\n",
 		(float)NV1QUAKE_VERSION, (float)VERSION);
 
+	Diag_Early (argc, argv);
+	DIAG_LOG (("nv1Quake %2.2f (Quake %4.2f)", (float)NV1QUAKE_VERSION, (float)VERSION));
+
 	COM_InitArgv (argc, argv);
+	DIAG_CP ("args parsed");
 
 	parms.argc = com_argc;
 	parms.argv = com_argv;
@@ -498,12 +517,16 @@ int main (int argc, char **argv)
 	if (COM_CheckParm ("-mem"))
 		memsize = Q_atoi (com_argv[COM_CheckParm ("-mem") + 1]) * 1024 * 1024;
 
+	DIAG_LOG (("heap: asking for %d MB", memsize / (1024 * 1024)));
 	membase = malloc (memsize);
 	while (!membase && memsize > 6 * 1024 * 1024)
 	{
+		DIAG_LOG (("heap: %d MB refused, trying %d MB", memsize / (1024 * 1024),
+			memsize / (1024 * 1024) - 1));
 		memsize -= 1024 * 1024;
 		membase = malloc (memsize);
 	}
+	DIAG_LOG (("heap: %d MB at %p", membase ? memsize / (1024 * 1024) : 0, membase));
 	if (!membase)
 		Sys_Error ("Not enough memory -- nv1Quake needs at least 6MB free");
 
@@ -516,10 +539,14 @@ int main (int argc, char **argv)
 
 	Sys_FloatTime ();		/* establish the time base */
 
+	DIAG_CP ("before keyboard hook");
 	if (!isDedicated)
 		Sys_HookKeyboard ();
+	DIAG_LOG (("keyboard hooked: %d", (int)keyboard_hooked));
 
+	DIAG_CP ("entering Host_Init");
 	Host_Init (&parms);
+	DIAG_CP ("Host_Init returned");
 
 	oldtime = Sys_FloatTime ();
 
@@ -532,6 +559,7 @@ int main (int argc, char **argv)
 			continue;
 
 		Host_Frame (time);
+		DIAG_FRAME ();
 
 		oldtime = newtime;
 	}

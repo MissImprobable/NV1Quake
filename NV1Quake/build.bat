@@ -13,10 +13,10 @@ set OUT=obj
 if not exist %OUT% mkdir %OUT%
 
 set INC=/I"src" /I"nvsoft" /I"..\WinQuake" /I"..\NV1\NV\SDK\INC" /I"..\WinQuake\dxsdk\SDK\INC"
-set DEF=/DWIN32 /D_WINDOWS /DGLQUAKE /DNV1_SOFT /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /FInv1_compat.h
+set DEF=/DWIN32 /D_WINDOWS /DGLQUAKE /DNV1_SOFT /DNV1_DIAG /D_CRT_SECURE_NO_WARNINGS /D_CRT_NONSTDC_NO_WARNINGS /FInv1_compat.h
 set CFLAGS=/nologo /c /TC /W3 /O2 /Oi /GS- /fp:fast %DEF% %INC% /Fo%OUT%\
 
-set NV1SRC=src\nv1_vid.c src\nv1_draw.c src\nv1_rmain.c src\nv1_rsurf.c src\nv1_warp.c src\nv1_model.c src\nv1_mesh.c src\nv1_rmisc.c src\nv1_rlight.c src\nv1_refrag.c src\nv1_screen.c src\nv1_part.c src\nv1_fpu.c
+set NV1SRC=src\nv1_vid.c src\nv1_draw.c src\nv1_rmain.c src\nv1_rsurf.c src\nv1_warp.c src\nv1_model.c src\nv1_mesh.c src\nv1_rmisc.c src\nv1_rlight.c src\nv1_refrag.c src\nv1_screen.c src\nv1_part.c src\nv1_fpu.c src\nv1_diag.c
 
 set SOFTSRC=nvsoft\nvsoft.c
 

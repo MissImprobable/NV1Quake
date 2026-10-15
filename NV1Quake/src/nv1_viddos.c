@@ -36,6 +36,7 @@ smaller.
 
 #include "quakedef.h"
 #include "nv1quake.h"
+#include "nv1_diag.h"
 
 viddef_t	vid;			/* global video state */
 
@@ -158,9 +159,15 @@ void VID_Init (unsigned char *palette)
  * Ask the resource manager.  In DOS the first argument is 0, not an instance
  * handle.
  */
+	DIAG_LOG (("VID_Init: nv1_vidmem %d MB, wanted at least %d x %d, chose RM mode id %d",
+		mb, wantw, wanth, want));
+	DIAG_LOG (("VID_Init: calling NvRequestVideoMode - if the log ends on this line the "
+		"driver hung or crashed inside it"));
 	if (!NvRequestVideoMode (0, NV_VIDMODE_DOUBLE_BUFFER, want,
 		NV_VIDMODE_HIGH_COLOR))
 	{
+		DIAG_LOG (("VID_Init: NvRequestVideoMode FAILED (returned 0) - no NV1 found, or the "
+			"requested mode is not available"));
 		Sys_Error ("nv1Quake needs an NV1 class accelerator (Diamond Edge "
 			"3D / STG2000).\nThe display driver would not give us a "
 			"double buffered 32K colour mode.");
@@ -170,8 +177,12 @@ void VID_Init (unsigned char *palette)
  * The request is only a request.  Find out what we actually got -- this call
  * is DOS only, which is why the Windows build cannot do the same check.
  */
+	DIAG_LOG (("VID_Init: NvRequestVideoMode returned success"));
 	buffers = resolution = depth = 0;
 	NvGetVideoMode (0, &buffers, &resolution, &depth);
+	DIAG_LOG (("VID_Init: NvGetVideoMode says buffers %d (want %d), resolution id %d (asked %d), "
+		"depth %d (want %d)", buffers, NV_VIDMODE_DOUBLE_BUFFER, resolution, want,
+		depth, NV_VIDMODE_HIGH_COLOR));
 
 	if (depth != NV_VIDMODE_HIGH_COLOR)
 	{
@@ -216,9 +227,14 @@ void VID_Init (unsigned char *palette)
 	glwidth = vid.width;
 	glheight = vid.height;
 
+	DIAG_LOG (("VID_Init: vid is %d x %d, conback %d x %d, aspect %f, fullbright %d",
+		vid.width, vid.height, vid.conwidth, vid.conheight, vid.aspect, vid.fullbright));
+	DIAG_LOG (("VID_Init: setting palette"));
 	VID_SetPalette (palette);
+	DIAG_LOG (("VID_Init: palette set; initialising NVLIB objects"));
 
 	NV1_DeviceInit ();
+	DIAG_LOG (("VID_Init: NVLIB objects ready"));
 
 	vid_initialized = true;
 
@@ -237,6 +253,7 @@ void VID_Shutdown (void)
 		return;
 
 	vid_initialized = false;
+	DIAG_LOG (("VID_Shutdown: tearing down NVLIB objects and restoring text mode"));
 
 	NVLIB_DestroyQTexQuad ();
 	NVLIB_DestroyQTexQuadA ();
@@ -371,20 +388,31 @@ void NV1_DeviceInit (void)
 {
 /* The division table NVLIB uses to place perspective-correct control points.
    Without this every patch is drawn with alpha 0.5 everywhere. */
+	DIAG_LOG (("NVLIB: InitDivLUT"));
 	NVLIB_InitDivLUT ();
 
+	DIAG_LOG (("NVLIB: InitDBPipe"));
 	if (!NVLIB_InitDBPipe (0))
 		Sys_Error ("NV1: NVLIB_InitDBPipe failed");
 
+	DIAG_LOG (("NVLIB: InitBkGnd"));
 	NVLIB_InitBkGnd (RGB555);
+	DIAG_LOG (("NVLIB: InitRectangle"));
 	NVLIB_InitRectangle (RGB555);
+	DIAG_LOG (("NVLIB: InitImage"));
 	NVLIB_InitImage (RGB555);
+	DIAG_LOG (("NVLIB: InitImageA"));
 	NVLIB_InitImageA (ARGB1555);
+	DIAG_LOG (("NVLIB: InitQTexQuad"));
 	NVLIB_InitQTexQuad (RGB555);
+	DIAG_LOG (("NVLIB: InitQTexQuadA"));
 	NVLIB_InitQTexQuadA (ARGB1555);
+	DIAG_LOG (("NVLIB: InitBlendQTexQuad"));
 	NVLIB_InitBlendQTexQuad (RGB555);
 
+	DIAG_LOG (("NVLIB: SetClip"));
 	NVLIB_SetClip (NVLIB_CLIP_OFF);
+	DIAG_LOG (("NVLIB: device init complete"));
 }
 
 /*
@@ -415,6 +443,18 @@ void NV1_BeginRendering (int *x, int *y, int *width, int *height)
 
 void NV1_EndRendering (void)
 {
+#ifdef NV1_DIAG
+	{
+		static int	flips;
+
+		if (diag_enabled && flips < 3)
+		{
+			flips++;
+			Diag_Log ("NV1_EndRendering: flip #%d (scr_skipupdate %d block_drawing %d)",
+				flips, (int)scr_skipupdate, (int)block_drawing);
+		}
+	}
+#endif
 	if (!scr_skipupdate || block_drawing)
 		NVLIB_FlipDBPipe (true);
 
