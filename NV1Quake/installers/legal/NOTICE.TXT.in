@@ -22,7 +22,7 @@ The complete corresponding source code is available free of charge:
   Repository: @@SOURCE_URL@@
   Commit:     @@COMMIT@@
   A source archive of exactly this commit is published next to this
-  installer (NV1Quake-@@VERSION@@-source.zip). If you cannot get it from
+  installer (NV1Quake-@@SOURCE_VERSION@@-source.zip). If you cannot get it from
   there, ask and we will provide it.
 
 GAME DATA
