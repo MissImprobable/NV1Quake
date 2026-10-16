@@ -27,13 +27,23 @@ builds. `nvsoft` is development scaffolding but is held to the same standard.
 
 **User-facing:** The DOS version now shows what it is doing as it starts. A title box is followed by one line per step: finding the NV1 card, checking how much memory is free, and setting aside memory for the game, each ending in a coloured DONE, WARN or FAILED. If memory is short, it says so on screen instead of failing later. The last line says LAUNCHING when everything is ready. If no NV1 card is found, the game now stops straight away with a clear "No NV1 detected" message instead of carrying on. If your card is not on the PCI bus, start the game with `-nopcicheck` to skip that check.
 
+**Applies to:** DOS
+
 **Implementation:** New `src/nv1_boot.c/.h`, compiled into the DOS build only (`build-dos.bat`). Output is plain `printf` plus BIOS int 10h function 09h for colour, so it works in any text mode. The card is found by a PCI BIOS scan (INT 1Ah B101h/B102h for 12D2:0008/0009 and 104A:0008/0009, the same ids as the diagnostic log) and not through `NvRequestVideoMode`, because that call switches to graphics mode and would hide the result. A miss (or no PCI BIOS) is a FAILED line plus `Sys_Error` before the heap is allocated or the driver is touched; `-nopcicheck` downgrades it to a WARN for boards that are not on PCI. Checked under DOSBox 0.74 (no PCI BIOS there, so it takes the stop path, each line on its own row). Every step is also written to `NV1DIAG.LOG` when `-diag` is on. `NV1QUAKE_VERSION` was still 0.10 and is now 0.12, so the banner matches the release.
 
 ### Fixed: DOS version ran out of memory on a 16 MB machine (2026-10-16)
 
 **User-facing:** On a computer with 16 MB of memory the DOS version could get most of the way into loading and then stop with an out-of-memory error. It now works out how much memory is free and keeps enough back for the game's textures. If memory is still too tight, it warns before starting, and the error message says what to try. Starting the game with `-mem` followed by a number still lets you choose the size yourself.
 
+**Applies to:** DOS
+
 **Implementation:** The engine heap used to ask for 16 MB and shrink 1 MB at a time until `malloc` succeeded, which took everything free; textures are `malloc`'d separately (`NV1_UploadIndexed`, RGB555 mip chains) and then had nothing left. `Boot_PlanHeap` now sizes the heap from the DPMI largest free block (INT 31h 0500h): that value minus a 5 MB texture reserve, clamped to 6..16 MB. `-mem N` is honoured (minimum 4, clamped to what is free). If DPMI will not report, the old 16 MB request is used. "Tight" is flagged when under 4 MB is left for textures. `Boot_QueryRam` adds `_memmax()` (the largest free block the C library already holds) to the DPMI figure, because the `-diag` malloc probe leaves about 8 MB there and the reading otherwise dropped from 11.9 MB to 3.7 MB just by turning `-diag` on. `tests/boot_heap_test.c` covers the sizing arithmetic on the host. The texture out-of-memory errors in `nv1_draw.c` now say what to do.
+
+### Internal: the release script versions each build separately (2026-10-16)
+
+**User-facing:** There is no change to the games. Behind the scenes, the web page now shows which version each download is, and says which build each change in the list is about.
+
+**Implementation:** Each non-Internal changelog entry now has an `**Applies to:**` line (Emulated, Win95, DOS or All). A build's version is the newest `## vX.Y.Z` section with an entry that applies to it (`lib\versions.ps1`). `build-release.ps1` compares those with the versions in the page's download links and builds, stages and uploads only the changed builds (`-RebuildAll` overrides); the source zip is always built under the release version. The page has `<span id="emu-ver">`, `w95-ver` and `dos-ver`, and the changelog block entries are prefixed with their build (`DOS: ...`) through `Add-BuildLabels`, leaving the shared `SiteRelease.psm1` untouched. `versions.json` follows the Emulated build and is only rewritten when it changes. Pre-flight also checks `NV1QUAKE_VERSION` in `nv1quake.h` against `VERSION`. Spec: `docs/superpowers/specs/2026-10-16-nv1quake-per-build-versions-design.md`.
 The full fix for small machines is to keep textures as 8-bit indexed data and convert to RGB555 while feeding the chip, which would halve texture memory. Not done here; it costs CPU time per texel and needs its own design.
 
 ---

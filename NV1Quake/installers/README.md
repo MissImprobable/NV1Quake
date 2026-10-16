@@ -17,6 +17,16 @@ tree whose commit is on `origin`.
 
 The release version is the single line in `VERSION`.
 
+## Per-build versions
+
+Emulated, Win95 and DOS each have their own version, taken from `CHANGELOG.md`: it is the newest `## vX.Y.Z`
+section that has an entry whose `**Applies to:**` line names that build (or `All`). `VERSION` is the release
+version and names the source zip. `build-release.ps1` prints a plan such as
+`Emulated 0.11 (unchanged, skipped) / Win95 0.11 (unchanged, skipped) / DOS 0.12 (build)`, builds and uploads only
+the changed builds, leaves the others' page links, sizes and SHA-256 alone, and stops if nothing changed.
+`-RebuildAll` rebuilds and re-uploads everything under the versions the changelog gives. The product page shows
+each download's version and labels each changelog entry with its build.
+
 ## Where things are
 
     art\     Fragged logo assets used for icons, the Inno wizard and the product page poster
