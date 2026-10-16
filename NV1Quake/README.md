@@ -76,6 +76,20 @@ interface lives separately in `src/nv1quake.h`.
 - Screenshots and `envmap` need a framebuffer readback that is not wired up.
 - `src/nv1_snd.c` (audio through the NV1's own engine) has never been run.
 
+## Command-line flags
+
+| flag | builds | effect |
+|---|---|---|
+| `-basedir <dir>` | all | folder holding `id1/` (defaults to the current directory) |
+| `-vidmem 2` | hardware | 2 MB framebuffer (Edge 3D 2200 with expansion modules) |
+| `-mem <MB>` | DOS | force the engine heap size. Default is automatic: the largest free block minus 5 MB kept for textures, clamped to 6-16 MB |
+| `-nopcicheck` | DOS | carry on when no NV1 is found on the PCI bus. Without it the DOS build stops with "No NV1 detected" before touching the driver (use this for a card that is not on PCI) |
+| `-diag` | all | write `NV1DIAG.LOG` in the current directory, one flushed line at a time |
+| `-diagv` | all | `-diag` plus the verbose trace |
+
+The DOS build prints a start-up report (NV1 detection, free RAM, heap) before the
+game starts; with `-diag` the same lines go into the log.
+
 ## Tuning
 
 On this chip performance *is* the texel budget. `r_speeds 1` reports patches
