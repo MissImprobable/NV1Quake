@@ -37,7 +37,7 @@ set CFLAGS=-bt=dos -mf -5r -zq -zp8 -otexan -s -w1 %DEF% %INC%
 echo compiling the NV1 renderer...
 for %%f in (nv1_viddos nv1_sysdos nv1_indos nv1_draw nv1_rmain nv1_rsurf
             nv1_warp nv1_model nv1_mesh nv1_rmisc nv1_rlight nv1_refrag
-            nv1_screen nv1_part nv1_strcmp nv1_diag) do (
+            nv1_screen nv1_part nv1_strcmp nv1_diag nv1_boot) do (
   wcc386 %CFLAGS% -fo=%OUT%\ src\%%f.c
   if errorlevel 1 goto fail
 )

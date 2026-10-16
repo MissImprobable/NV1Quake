@@ -329,7 +329,8 @@ static void NV1_UploadIndexed (nv1texture_t *t, int width, int height,
 		free (t->base);
 	t->base = (unsigned short *)malloc (total * sizeof(unsigned short));
 	if (!t->base)
-		Sys_Error ("NV1_UploadIndexed: out of memory");
+		Sys_Error ("Out of memory loading textures (NV1_UploadIndexed).\n"
+			"Free up RAM, or run with a smaller -mem to leave more room for textures.");
 
 	out = t->base;
 	for (level = 0 ; level < t->nummips ; level++)
@@ -353,7 +354,8 @@ static void NV1_UploadIndexed (nv1texture_t *t, int width, int height,
 	{
 		scaled = (byte *)malloc (npix);
 		if (!scaled)
-			Sys_Error ("NV1_UploadIndexed: out of memory");
+			Sys_Error ("Out of memory loading textures (NV1_UploadIndexed).\n"
+				"Free up RAM, or run with a smaller -mem to leave more room for textures.");
 		NV1_ResampleIndexed (data, width, height, scaled, w, h);
 		data = scaled;
 	}

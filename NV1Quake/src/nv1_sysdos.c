@@ -51,6 +51,7 @@ neither), and it is why the original vector must be put back on the way out.
 #include "quakedef.h"
 #include "nv1quake.h"
 #include "nv1_diag.h"
+#include "nv1_boot.h"
 
 qboolean		isDedicated;
 
@@ -488,11 +489,13 @@ int main (int argc, char **argv)
 	double	time, oldtime, newtime;
 	int	memsize;
 	void	*membase;
-
-	printf ("nv1Quake %2.2f (Quake %4.2f) -- NVIDIA NV1 / Diamond Edge 3D\n",
-		(float)NV1QUAKE_VERSION, (float)VERSION);
+	int	hw, usermb;
+	unsigned long	largest;
+	nv1_heapplan_t	plan;
+	char	detail[128];
 
 	Diag_Early (argc, argv);
+	Boot_Banner (NV1QUAKE_VERSION);
 	DIAG_LOG (("nv1Quake %2.2f (Quake %4.2f)", (float)NV1QUAKE_VERSION, (float)VERSION));
 
 	COM_InitArgv (argc, argv);
@@ -510,16 +513,58 @@ int main (int argc, char **argv)
 		parms.basedir = com_argv[COM_CheckParm ("-basedir") + 1];
 
 /*
- * Heap.  DOS/4GW hands out extended memory, so this is just a malloc; 16MB is
- * comfortable and Quake will run in 8.
+ * Start-up report: find the card, find the RAM, size the heap from it.  The
+ * card is found on the PCI bus rather than through the driver because the
+ * driver switches to graphics mode and would hide the result (see nv1_boot.c).
  */
-	memsize = 16 * 1024 * 1024;
-	if (COM_CheckParm ("-mem"))
-		memsize = Q_atoi (com_argv[COM_CheckParm ("-mem") + 1]) * 1024 * 1024;
+	Boot_Step ("Detecting NV1 hardware");
+	hw = Boot_DetectNV1 (detail, sizeof(detail));
+	if (hw > 0)
+	{
+		Boot_Done (BOOT_DONE, detail);
+	}
+	else if (COM_CheckParm ("-nopcicheck"))
+	{
+		Boot_Done (BOOT_WARN, hw == 0 ? "not on PCI - continuing (-nopcicheck)"
+			: "no PCI BIOS - continuing (-nopcicheck)");
+	}
+	else
+	{
+		Boot_Done (BOOT_FAILED, hw == 0 ? "No NV1 detected" : "No NV1 detected (no PCI BIOS)");
+		Sys_Error ("No NV1 detected.\n"
+			"nv1Quake needs an NVIDIA NV1 card (Diamond Edge 3D / STG2000) on the PCI bus.\n"
+			"%s\n"
+			"If your card is not on PCI, start with -nopcicheck to skip this check.",
+			hw == 0 ? "No NV1 or STG2000 was found."
+				: "This computer has no PCI BIOS, so the card could not be looked for.");
+	}
 
-	DIAG_LOG (("heap: asking for %d MB", memsize / (1024 * 1024)));
+	Boot_Step ("Detecting system RAM");
+	largest = Boot_QueryRam ();
+	if (largest == BOOT_UNKNOWN_MEM)
+	{
+		Boot_Done (BOOT_WARN, "DOS/4GW would not say - assuming enough");
+	}
+	else
+	{
+		sprintf (detail, "%lu MB free extended memory", largest / (1024UL * 1024UL));
+		Boot_Done (BOOT_DONE, detail);
+	}
+
+/*
+ * Heap.  Sized from the largest free block with a reserve held back for
+ * textures, which are malloc'd on their own outside this heap.  -mem N still
+ * forces a size.
+ */
+	usermb = COM_CheckParm ("-mem") ? Q_atoi (com_argv[COM_CheckParm ("-mem") + 1]) : 0;
+	Boot_PlanHeap (largest, usermb, &plan);
+	memsize = plan.heap_mb * 1024 * 1024;
+
+	Boot_Step ("Allocating engine heap");
+	DIAG_LOG (("heap: plan %d MB (largest block %lu, -mem %d, textures get %d MB, tight %d)",
+		plan.heap_mb, largest, usermb, plan.texture_mb, plan.tight));
 	membase = malloc (memsize);
-	while (!membase && memsize > 6 * 1024 * 1024)
+	while (!membase && memsize > BOOT_HEAP_MIN_MB * 1024 * 1024)
 	{
 		DIAG_LOG (("heap: %d MB refused, trying %d MB", memsize / (1024 * 1024),
 			memsize / (1024 * 1024) - 1));
@@ -528,12 +573,32 @@ int main (int argc, char **argv)
 	}
 	DIAG_LOG (("heap: %d MB at %p", membase ? memsize / (1024 * 1024) : 0, membase));
 	if (!membase)
-		Sys_Error ("Not enough memory -- nv1Quake needs at least 6MB free");
+	{
+		Boot_Done (BOOT_FAILED, "not enough free memory");
+		Sys_Error ("Not enough memory -- nv1Quake needs at least %d MB of free extended "
+			"memory.\nUnload drivers and TSRs, or free up RAM, and try again.",
+			BOOT_HEAP_MIN_MB);
+	}
 
 	parms.membase = membase;
 	parms.memsize = memsize;
 
-	printf ("%d MB heap\n", memsize / (1024 * 1024));
+	if (largest == BOOT_UNKNOWN_MEM)
+		sprintf (detail, "%d MB heap%s", memsize / (1024 * 1024),
+			plan.from_user ? " (-mem)" : "");
+	else
+	{
+		int	texmb = (int)(largest / (1024UL * 1024UL)) - memsize / (1024 * 1024);
+
+		sprintf (detail, "%d MB heap, ~%d MB textures%s",
+			memsize / (1024 * 1024), texmb > 0 ? texmb : 0,
+			plan.from_user ? " (-mem)" : "");
+	}
+	Boot_Done (plan.tight ? BOOT_WARN : BOOT_DONE, detail);
+	if (plan.tight)
+		Boot_Note (BOOT_WARN, "Memory is tight: big maps may run out. Free up RAM if it does.");
+
+	Boot_Launch ();
 
 	isDedicated = (COM_CheckParm ("-dedicated") != 0);
 

@@ -47,7 +47,7 @@ Foundation, Inc., 59 Temple Place - Suite 330, Boston, MA  02111-1307, USA.
 #include "nvsoft.h"
 #endif
 
-#define NV1QUAKE_VERSION	0.10
+#define NV1QUAKE_VERSION	0.12
 
 /*
 =============================================================================
